@@ -1,0 +1,3 @@
+/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/cmake-build-debug/CMakeFiles/ATCS_Neural_Networks.dir
+/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/cmake-build-debug/CMakeFiles/rebuild_cache.dir
