@@ -8,15 +8,9 @@ using namespace std;
 
 int main()
 {
-   int* numbers = new int[3];
-   cout << sizeof(numbers) << endl;
-   *(numbers+4) = 4;
+   int numbers[] = {1, 2, 3};
 
-   for (int i = 0; i < 5; i++)
-   {
-      cout << numbers[i] << endl;
-   }
-   cout << sizeof(numbers) << endl;
+   cout << sizeof(numbers)/sizeof(numbers[0]);
 
    cout << "Hello World!";
 }
