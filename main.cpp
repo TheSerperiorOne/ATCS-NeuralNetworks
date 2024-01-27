@@ -1,7 +1,7 @@
 #include <iostream>
 
-int main()
+int main1()
 {
-    std::cout << (2.0 * pow(10, -4)) << std::endl;
+    std::cout << "Hello" << std::endl;
     return 0;
 }

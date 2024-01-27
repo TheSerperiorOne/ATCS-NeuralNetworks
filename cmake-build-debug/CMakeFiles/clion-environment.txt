@@ -1,3 +1,4 @@
-ToolSet: 1.0 (local)Options: 
+ToolSet: 11.0 w64 (local)@C:\Users\Varun Thvar\AppData\Local\Programs\CLion Nova\bin\mingw
+Options: 
 
-Options:-DCMAKE_MAKE_PROGRAM=/Users/varunthvar1/Applications/CLion Nova.app/Contents/bin/ninja/mac/aarch64/ninja
+Options:
