@@ -13,6 +13,11 @@
 #define RANDOM_MIN (double) -1.5
 #define RANDOM_MAX (double) 1.5
 #define ERROR_THRESHOLD (double) (2.0 * pow(10, -4))
+#define MILLISECONDS_IN_SECOND 1000.0
+#define SECONDS_IN_MINUTE 60.0
+#define MINUTES_IN_HOUR 60.0
+#define HOURS_IN_DAY 24.0
+#define DAYS_IN_WEEK 7.0
 
 
 
@@ -59,30 +64,30 @@ void printTime(double seconds)
    printf("Elapsed time: ");
 
    if (seconds < 1.)
-      printf("%g milliseconds", seconds * 1000.);
-   else if (seconds < 60.)
+      printf("%g milliseconds", seconds * MILLISECONDS_IN_SECOND);
+   else if (seconds < SECONDS_IN_MINUTE)
       printf("%g seconds", seconds);
    else
    {
-      minutes = seconds / 60.;
+      minutes = seconds / SECONDS_IN_MINUTE;
 
-      if (minutes < 60.)
+      if (minutes < MINUTES_IN_HOUR)
          printf("%g minutes", minutes);
       else
       {
-         hours = minutes / 60.;
+         hours = minutes / MINUTES_IN_HOUR;
 
-         if (hours < 24.)
+         if (hours < HOURS_IN_DAY)
             printf("%g hours", hours);
          else
          {
-            days = hours / 24.;
+            days = hours / HOURS_IN_DAY;
 
-            if (days < 7.)
+            if (days < DAYS_IN_WEEK)
                printf("%g days", days);
             else
             {
-               weeks = days / 7.;
+               weeks = days / DAYS_IN_WEEK;
 
                printf("%g weeks", weeks);
             }
@@ -95,7 +100,31 @@ void printTime(double seconds)
 } // void printTime(double seconds)
 
 /**
- *
+ * This is the structure of the Neural Network, which contains the following:
+ *    k: Number of Activations
+ *    j: Number of Hidden Nodes in each Hidden Layer
+ *    numHiddenLayers: Number of Hidden Layers
+ *    lambda: Lambda Value
+ *    errorThreshold: Error Threshold
+ *    maxIterations: Maximum number of iterations
+ *    randMin: Minimum value of the random value assigned to weights
+ *    randMax: Maximum value of the random value assigned to weights
+ *    a: Activations
+ *    h: Hidden Nodes
+ *    F0: Output
+ *    weights0j: Weights between the Input Layer and the Hidden Layers
+ *    weightsjk: Weights between the Hidden Layers and the Output Layer
+ *    training: Whether or not the network is in training mode (the alternative being running mode)
+ *    I, J, K: Variables used for looping through the arrays
+ *    thetaj: Value used for calculating the Hidden Nodes
+ *    thetai: Value used for calculating the Output
+ *    training_time: Time taken for training the network
+ *    running_time: Time taken for running the network
+ *    dummyStart: Dummy variable used for timing
+ *    dummyEnd: Dummy variable used for timing
+ *    iterations: Number of iterations taken during training
+ *    error_reached: Error value reached at the end of training or running
+ *    reasonForEndOfTraining: Reason for the end of training
  */
 struct NeuralNetwork
 {
@@ -133,10 +162,19 @@ struct NeuralNetwork
    double randomValue()
    {
       return rand() * (randMin - randMax) + randMin;
-   }
+   } // double randomValue()
 
    /**
-    * Sets the configuration parameters
+    * Sets the configuration parameters for the network based on the following parameters:
+    *   numAct: Number of Activations
+    *   numHidLayer: Number of Hidden Layers
+    *   numHidInEachLayer: Number of Hidden Nodes in each Hidden Layer
+    *   lamb: Lambda Value
+    *   errorThres: Error Threshold
+    *   maxIter: Maximum number of iterations
+    *   min: Minimum value of the random value assigned to weights
+    *   max: Maximum value of the random value assigned to weights
+    *   train: Whether or not the network is in training mode (the alternative being running mode)
     */
    void setConfigurationParameters(int numAct, int numHidLayer, int numHidInEachLayer, int lamb,
                                    float errorThres, int maxIter, double min, double max, bool train)
@@ -154,7 +192,7 @@ struct NeuralNetwork
    } // void setConfigurationParameters(int numAct, int numHidLayer ...
 
   /**
-   *
+   * Outputs the configuration parameters for the network
    */
    void echoConfigurationParameters()
    {
@@ -170,7 +208,7 @@ struct NeuralNetwork
    } //void echoConfigurationParameters()
 
    /**
-    *
+    * Allocates memory for the activations, hidden nodes, and weights of the network
     */
    void allocateArrayMemory()
    {
@@ -187,7 +225,8 @@ struct NeuralNetwork
    } //void allocateArrayMemory()
 
    /**
-    *
+    * Populates the arrays with random values, unless the network is a 2-2-1 network, in which it manually overrides
+    *    the values to match a set of pre-determined values
     */
    void populateArrays()
    {
@@ -206,7 +245,7 @@ struct NeuralNetwork
          for (int J = 0; J < j; ++J) weights0j[J] = randomValue();
 
          for (int J = 0; J < j; ++J) for (int K = 0; K < k; ++K) weightsjk[J][K] = randomValue();
-      }
+      } // else
 
       cout << "Populated Arrays!" << endl;
 
@@ -214,19 +253,20 @@ struct NeuralNetwork
    } //void populateArrays()
 
    /**
-    *
+    * Trains the network using predetermined training data
     */
-   void Train()
+   void Train() // TODO: Figure out how to train network
    {
       error_reached = 0.0;
 
       return;
-   }
+   } // void Train()
 
    /**
-    *
+    * Runs the network using predetermined test data. Each node is calculated using the sigmoid function applied
+    *    onto a dot product of the weights and the activations
     */
-   void Run(double *inputValues)
+   void Run(double *inputValues) // TODO: Figure out how to find the error and time taken
    {
       a = inputValues;
 
@@ -236,15 +276,15 @@ struct NeuralNetwork
          for (K = 0; K < k; ++K)
          {
             thetaj += a[K] * weightsjk[J][K];
-         }
+         } // for (K = 0; K < k; ++K)
          h[J] = sigmoid(thetaj);
-      }
+      } // for (J = 0; J < j; ++J)
 
       thetai = 0;
       for (J = 0; J < j; ++J)
       {
          thetai += h[J] * weights0j[J];
-      }
+      } // for (J = 0; J < j; ++J)
       F0 = sigmoid(thetai);
 
       cout << "Output: " << F0 << endl;
@@ -252,7 +292,8 @@ struct NeuralNetwork
    } // void Run(double inputValues[])
 
    /**
-    *
+    * Reports the results of the training or running of the network, depending on the mode the network
+    *    is in training mode or not
     */
    void reportResults()
    {
@@ -276,13 +317,13 @@ struct NeuralNetwork
 
          cout << "Error Reached: " << error_reached << endl;
          cout << "Iterations reached: " << iterations << endl;
-      }
+      } // else
       return;
    } // reportResults()
 }; // struct NeuralNetwork
 
 /**
- *
+ * Main function of the program - creates and configures the network, trains it, and then runs it
  */
 int main(int argc, char *argv[])
 {
@@ -306,4 +347,4 @@ int main(int argc, char *argv[])
    // network->reportResults();
 
    return 0;
-}
+} // int main(int argc, char *argv[])
