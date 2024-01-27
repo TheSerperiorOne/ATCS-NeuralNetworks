@@ -2,6 +2,6 @@
 
 int main()
 {
-    std::cout << "Hello, World!" << std::endl;
+    std::cout << (2.0 * pow(10, -4)) << std::endl;
     return 0;
 }
