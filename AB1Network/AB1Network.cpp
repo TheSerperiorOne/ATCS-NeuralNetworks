@@ -115,7 +115,8 @@ void printTime(double seconds)
  *    weights0j: Weights between the Input Layer and the Hidden Layers
  *    weightsjk: Weights between the Hidden Layers and the Output Layer
  *    training: Whether or not the network is in training mode (the alternative being running mode)
- *    I, J, K: Variables used for looping through the arrays
+ *    I, J, K: Variables used for looping through the outputs, hidden layer, and activations respectively
+ *    training_iterator: Used to iterate over all the test cases
  *    thetaj: Value used for calculating the Hidden Nodes
  *    thetai: Value used for calculating the Output
  *    training_time: Time taken for training the network
@@ -145,8 +146,18 @@ struct NeuralNetwork
 
    bool training;
    int I, J, K;
+   int training_iterator;
    double thetaj;
    double thetai;
+
+   double lowerOmega;
+   double lowerPsi;
+   double EPrimeJ0;
+   double deltaWj0;
+   double capitalOmega;
+   double capitalPsi;
+   double EPrimeJK;
+   double deltaWJK; // TODO: Add to javadoc above
 
    int training_time;
    int running_time;
@@ -271,10 +282,61 @@ struct NeuralNetwork
    /**
     * Trains the network using predetermined training data
     */
-   void Train() // TODO: Figure out how to train network
+   void Train(double** data, double* answers) // TODO: Figure out how to train network
    {
       checkNetwork();
       error_reached = 0.0;
+
+      for (training_iterator = 0; training_iterator < maxIterations && error_reached > errorThreshold; ++training_iterator)
+      {
+         checkNetwork();
+         a = data[training_iterator % 4];
+
+         for (J = 0; J < j; ++J)
+         {
+            thetaj = 0;
+            for (K = 0; K < k; ++K)
+            {
+               thetaj += a[K] * weightsjk[J][K];
+            } // for (K = 0; K < k; ++K)
+            h[J] = sigmoid(thetaj);
+         } // for (J = 0; J < j; ++J)
+
+         thetai = 0;
+         for (J = 0; J < j; ++J)
+         {
+            thetai += h[J] * weights0j[J];
+         } // for (J = 0; J < j; ++J)
+         F0 = sigmoid(thetai);
+
+         error_reached = 0.5 * pow((answers[training_iterator % 4] - F0), 2);
+
+         cout << "Iteration Number: " << training_iterator << ", Test Case: " << a[0] << " & " << a[1] <<
+            "Expected Output: " << answers[training_iterator % 4] << ", Output: " << F0 << ", Error: " << error_reached << endl << endl;
+
+         lowerOmega = answers[training_iterator % 4] - F0;
+         lowerPsi = lowerOmega * sigmoidPrime(thetai);
+         for (J = 0; J < j; ++J)
+         {
+            EPrimeJ0 = -1 * h[J] * lowerPsi;
+            deltaWj0 = -1 * lambda * EPrimeJ0;
+            weights0j[J] += deltaWj0;
+         }
+
+         for (J = 0; J < j; ++J)
+         {
+            capitalOmega = lowerPsi * weights0j[J];
+            capitalPsi = capitalOmega * sigmoidPrime(thetaj);
+
+            for (K = 0; K < k; ++K)
+            {
+               EPrimeJK = -1 * a[K] * capitalPsi;
+               deltaWJK = -1 * lambda * EPrimeJK;
+               weightsjk[J][K] += deltaWJK;
+            }
+         }
+
+      } // for (training_iterator = 0; training_iterator ...
 
       return;
    } // void Train()
@@ -355,8 +417,19 @@ int main(int argc, char *argv[])
    network->allocateArrayMemory(); // Allocating Arrays in Network
    network->populateArrays();
 
-   // network->Train(); // Training the Network using predetermined training data
-   // network->reportResults();
+   double** train_data = new double*[4];
+   train_data[0] = new double[];
+   train_data[1] = new double[];
+   train_data[2] = new double[];
+   train_data[3] = new double[];
+   train_data[0][0] = 0;
+   train_data[0][1] = 0;
+   train_data[1][0]
+
+
+   double train_answers[] = {0, 0, 0, 1};
+   network->Train(train_data, train_answers); // Training the Network using predetermined training data
+   network->reportResults();
 
    network->training = false; // Running the Network using test data
    double testdata[] = {0.0, 1.0}; // TODO Fix Implementation of Test and Train Data
