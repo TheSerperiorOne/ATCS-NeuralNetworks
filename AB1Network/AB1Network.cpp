@@ -13,11 +13,11 @@
 #define RANDOM_MIN (double) -1.5
 #define RANDOM_MAX (double) 1.5
 #define ERROR_THRESHOLD (double) (2.0 * pow(10, -4))
-#define MILLISECONDS_IN_SECOND 1000.0
-#define SECONDS_IN_MINUTE 60.0
-#define MINUTES_IN_HOUR 60.0
-#define HOURS_IN_DAY 24.0
-#define DAYS_IN_WEEK 7.0
+#define MILLISECONDS_IN_SECOND (double) 1000.0
+#define SECONDS_IN_MINUTE (double) 60.0
+#define MINUTES_IN_HOUR (double) 60.0
+#define HOURS_IN_DAY (double) 24.0
+#define DAYS_IN_WEEK (double) 7.0
 
 
 
@@ -253,10 +253,27 @@ struct NeuralNetwork
    } //void populateArrays()
 
    /**
+    * Outputs the Network Type, Lambda Value, Error Threshold, Maximum Number of Iterations,
+    *    and the Random Number Range. To be used before training and/or running.
+    */
+   void checkNetwork()
+   {
+      cout << "Network Type: " << k << "-" << j << "-" << 1 << endl;
+      cout << "Lambda Value: " << this->lambda << endl;
+      cout << "Error Threshold: " << this->errorThreshold << endl;
+      cout << "Maximum Number of Iterations: " << this->maxIterations << endl;
+      cout << "Random Value Minimum: " << this->randMin << endl;
+      cout << "Random Value Maximum: " << this->randMax << endl;
+
+      return;
+   }
+
+   /**
     * Trains the network using predetermined training data
     */
    void Train() // TODO: Figure out how to train network
    {
+      checkNetwork();
       error_reached = 0.0;
 
       return;
@@ -268,6 +285,7 @@ struct NeuralNetwork
     */
    void Run(double *inputValues) // TODO: Figure out how to find the error and time taken
    {
+      checkNetwork();
       a = inputValues;
 
       for (J = 0; J < j; ++J)
@@ -315,7 +333,6 @@ struct NeuralNetwork
          printTime(running_time);
          cout << endl;
 
-         cout << "Error Reached: " << error_reached << endl;
          cout << "Iterations reached: " << iterations << endl;
       } // else
       return;
@@ -342,7 +359,7 @@ int main(int argc, char *argv[])
    // network->reportResults();
 
    network->training = false; // Running the Network using test data
-   double testdata[] = {0.0, 1.0};
+   double testdata[] = {0.0, 1.0}; // TODO Fix Implementation of Test and Train Data
    network->Run(testdata);
    // network->reportResults();
 
