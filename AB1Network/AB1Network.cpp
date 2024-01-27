@@ -1,11 +1,13 @@
 /*
  * Author: Varun Thvar
  * Date of Creation: 26 January 2023
- * Description: ()
+ * Description: This is an implementation of a simple A-B-1 Network designed for simple boolean algebra problems.
  */
 
 #include <cmath>
 #include <iostream>
+#include <time.h>
+
 #define MAX_ITERATIONS (int) 100000
 #define LAMBDA (double) 0.3
 #define RANDOM_MIN (double) -1.5
@@ -17,7 +19,8 @@
 using namespace std;
 
 /**
- *
+ * This implements the sigmoid function, which is defined by
+ *    sigmoid(x) = 1/(1 + e^(-x))
  */
 double sigmoid(double value)
 {
@@ -25,9 +28,9 @@ double sigmoid(double value)
 }
 
 /**
- * \brief
- * \param value
- * \return
+ * This implements the derivative of the sigmoid function, which is defined by
+ *    (d/dx) sigmoid(x) = sigmoid(x) * (1 - sigmoid(x)), where sigmoid is defined by
+ *    sigmoid(x) = 1/(1 + e^(-x))
  */
 double sigmoidPrime(double value)
 {
@@ -35,10 +38,14 @@ double sigmoidPrime(double value)
     return sig * (1 - sig);
 }
 
+/**
+ *
+ */
 void printArray(double *array, int size)
 {
    for (int looper = 0; looper < size; looper++) cout << array[looper] << ", ";
    cout << endl << "Size of Array: " << size << endl;
+   return;
 }
 
 /**
@@ -92,8 +99,8 @@ void printTime(double seconds)
  */
 struct NeuralNetwork
 {
-   int numActivations;
-   int numHiddensInEachLayer;
+   int k;
+   int j;
    int numHiddenLayers;
    int lambda;
    float errorThreshold;
@@ -108,19 +115,20 @@ struct NeuralNetwork
    double** weightsjk;
 
    bool training;
-   int i, j, k;
    int I, J, K;
    double thetaj;
    double thetai;
 
    int training_time;
    int running_time;
+   int dummyStart;
+   int dummyEnd;
    int iterations;
    float error_reached;
    string reasonForEndOfTraining;
 
    /**
-    *
+    * Outputs a random value based on the range as given in the configuration parameters
     */
    double randomValue()
    {
@@ -128,21 +136,21 @@ struct NeuralNetwork
    }
 
    /**
-    *
+    * Sets the configuration parameters
     */
    void setConfigurationParameters(int numAct, int numHidLayer, int numHidInEachLayer, int lamb,
                                    float errorThres, int maxIter, double min, double max, bool train)
    {
-      this->numActivations = numAct;
+      this->k = numAct;
       this->numHiddenLayers = numHidLayer;
-      this->numHiddensInEachLayer = numHidInEachLayer;
+      this->j = numHidInEachLayer;
       this->lambda = lamb;
       this->errorThreshold = errorThres;
       this->maxIterations = maxIter;
       this->randMin = min;
       this->randMax = max;
       this->training = train;
-       return;
+      return;
    } // void setConfigurationParameters(int numAct, int numHidLayer ...
 
   /**
@@ -150,8 +158,8 @@ struct NeuralNetwork
    */
    void echoConfigurationParameters()
    {
-      cout << "Number of Activations: " << this->numActivations << endl;
-      cout << "Number of Hidden Nodes in Each Hidden Layer: " << this->numHiddensInEachLayer << endl;
+      cout << "Number of Activations: " << this->k << endl;
+      cout << "Number of Hidden Nodes in Each Hidden Layer: " << this->j << endl;
       cout << "Number of Hidden Layers: " << this->numHiddenLayers << endl;
       cout << "Lambda Value: " << this->lambda << endl;
       cout << "Error Threshold: " << this->errorThreshold << endl;
@@ -166,13 +174,13 @@ struct NeuralNetwork
     */
    void allocateArrayMemory()
    {
-      a = new double[numActivations];
-      h = new double[numHiddensInEachLayer];
+      a = new double[k];
+      h = new double[j];
 
-      weights0j = new double[numHiddensInEachLayer];
+      weights0j = new double[j];
 
-      weightsjk = new double*[numHiddensInEachLayer];
-      for (J = 0; J < numHiddensInEachLayer; ++J) weightsjk[J] = new double[numActivations];
+      weightsjk = new double*[j];
+      for (J = 0; J < j; ++J) weightsjk[J] = new double[k];
 
       cout << "Allocated Memory!" << endl;
       return;
@@ -183,7 +191,7 @@ struct NeuralNetwork
     */
    void populateArrays()
    {
-      if (numHiddensInEachLayer == 2 && numActivations == 2 && numHiddenLayers == 1)
+      if (j == 2 && k == 2 && numHiddenLayers == 1)
       {
          weights0j[0] = 0.103;
          weights0j[1] = 0.23;
@@ -195,9 +203,9 @@ struct NeuralNetwork
       } // if (numHiddensInEachLayer == 2 ...
       else
       {
-         for (int J = 0; J < numHiddensInEachLayer; ++J) weights0j[J] = randomValue();
+         for (int J = 0; J < j; ++J) weights0j[J] = randomValue();
 
-         for (int J = 0; J < numHiddensInEachLayer; ++J) for (int K = 0; K < numActivations; ++K) weightsjk[J][K] = randomValue();
+         for (int J = 0; J < j; ++J) for (int K = 0; K < k; ++K) weightsjk[J][K] = randomValue();
       }
 
       cout << "Populated Arrays!" << endl;
@@ -212,7 +220,7 @@ struct NeuralNetwork
    {
       error_reached = 0.0;
 
-
+      return;
    }
 
    /**
@@ -222,10 +230,10 @@ struct NeuralNetwork
    {
       a = inputValues;
 
-      for (J = 0; J < numHiddensInEachLayer; ++J)
+      for (J = 0; J < j; ++J)
       {
          thetaj = 0;
-         for (K = 0; K < numActivations; ++K)
+         for (K = 0; K < k; ++K)
          {
             thetaj += a[K] * weightsjk[J][K];
          }
@@ -233,13 +241,14 @@ struct NeuralNetwork
       }
 
       thetai = 0;
-      for (J = 0; J < numHiddensInEachLayer; ++J)
+      for (J = 0; J < j; ++J)
       {
          thetai += h[J] * weights0j[J];
       }
       F0 = sigmoid(thetai);
 
       cout << "Output: " << F0 << endl;
+      return;
    } // void Run(double inputValues[])
 
    /**
@@ -268,7 +277,7 @@ struct NeuralNetwork
          cout << "Error Reached: " << error_reached << endl;
          cout << "Iterations reached: " << iterations << endl;
       }
-
+      return;
    } // reportResults()
 }; // struct NeuralNetwork
 
