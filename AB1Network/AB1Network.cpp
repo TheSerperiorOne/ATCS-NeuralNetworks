@@ -10,7 +10,7 @@
 
 #define MAX_ITERATIONS (int) 100000
 #define LAMBDA (double) 0.3
-#define RANDOM_MIN (double) -1.5
+#define RANDOM_MIN ((double) -1.5)
 #define RANDOM_MAX (double) 1.5
 #define ERROR_THRESHOLD (double) (2.0 * pow(10, -4))
 #define MILLISECONDS_IN_SECOND (double) 1000.0
@@ -18,8 +18,6 @@
 #define MINUTES_IN_HOUR (double) 60.0
 #define HOURS_IN_DAY (double) 24.0
 #define DAYS_IN_WEEK (double) 7.0
-
-
 
 using namespace std;
 
@@ -132,7 +130,7 @@ struct NeuralNetwork
    int k;
    int j;
    int numHiddenLayers;
-   int lambda;
+   double lambda;
    float errorThreshold;
    int maxIterations;
    double randMin;
@@ -150,6 +148,7 @@ struct NeuralNetwork
    double thetaj;
    double thetai;
 
+   float dummyError;
    double lowerOmega;
    double lowerPsi;
    double EPrimeJ0;
@@ -172,7 +171,7 @@ struct NeuralNetwork
     */
    double randomValue()
    {
-      return rand() * (randMin - randMax) + randMin;
+      return ((double) rand() / (RAND_MAX)) * (randMax - randMin) + randMin;
    } // double randomValue()
 
    /**
@@ -239,27 +238,11 @@ struct NeuralNetwork
     * Populates the arrays with random values, unless the network is a 2-2-1 network, in which it manually overrides
     *    the values to match a set of pre-determined values
     */
-   void populateArrays()
+   void populateArrays(bool random)
    {
-      if (j == 2 && k == 2 && numHiddenLayers == 1)
-      {
-         weights0j[0] = 0.103;
-         weights0j[1] = 0.23;
-
-         weightsjk[0][0] = 1;
-         weightsjk[1][0] = 1;
-         weightsjk[0][1] = 1;
-         weightsjk[1][1] = 1;
-      } // if (numHiddensInEachLayer == 2 ...
-      else
-      {
-         for (int J = 0; J < j; ++J) weights0j[J] = randomValue();
-
-         for (int J = 0; J < j; ++J) for (int K = 0; K < k; ++K) weightsjk[J][K] = randomValue();
-      } // else
-
+      for (int J = 0; J < j; ++J) weights0j[J] = randomValue();
+      for (int J = 0; J < j; ++J) for (int K = 0; K < k; ++K) weightsjk[J][K] = randomValue();
       cout << "Populated Arrays!" << endl;
-
       return;
    } //void populateArrays()
 
@@ -285,11 +268,12 @@ struct NeuralNetwork
    void Train(double** data, double* answers) // TODO: Figure out how to train network
    {
       checkNetwork();
-      error_reached = 0.0;
+      error_reached = pow(2, 31) - 1;
+      dummyError = pow(2, 31) - 1;
+      printArray(weights0j, j);
 
-      for (training_iterator = 0; training_iterator < maxIterations && error_reached > errorThreshold; ++training_iterator)
+      for (training_iterator = 0; training_iterator < maxIterations; ++training_iterator)
       {
-         checkNetwork();
          a = data[training_iterator % 4];
 
          for (J = 0; J < j; ++J)
@@ -309,10 +293,11 @@ struct NeuralNetwork
          } // for (J = 0; J < j; ++J)
          F0 = sigmoid(thetai);
 
-         error_reached = 0.5 * pow((answers[training_iterator % 4] - F0), 2);
+         dummyError = 0.5 * pow((answers[training_iterator % 4] - F0), 2);
+         error_reached = dummyError;
 
          cout << "Iteration Number: " << training_iterator << ", Test Case: " << a[0] << " & " << a[1] <<
-            "Expected Output: " << answers[training_iterator % 4] << ", Output: " << F0 << ", Error: " << error_reached << endl << endl;
+            ", Expected Output: " << answers[training_iterator % 4] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
 
          lowerOmega = answers[training_iterator % 4] - F0;
          lowerPsi = lowerOmega * sigmoidPrime(thetai);
@@ -322,6 +307,7 @@ struct NeuralNetwork
             deltaWj0 = -1 * lambda * EPrimeJ0;
             weights0j[J] += deltaWj0;
          }
+         printArray(weights0j, j);
 
          for (J = 0; J < j; ++J)
          {
@@ -334,9 +320,11 @@ struct NeuralNetwork
                deltaWJK = -1 * lambda * EPrimeJK;
                weightsjk[J][K] += deltaWJK;
             }
-         }
-
+         } // for (J = 0; J < j; ++J)
       } // for (training_iterator = 0; training_iterator ...
+
+      if (training_iterator == maxIterations) reasonForEndOfTraining = "Maximum Number of Iterations Reached";
+      else reasonForEndOfTraining = "Error Threshold Reached";
 
       return;
    } // void Train()
@@ -415,17 +403,21 @@ int main(int argc, char *argv[])
    network->echoConfigurationParameters();
 
    network->allocateArrayMemory(); // Allocating Arrays in Network
-   network->populateArrays();
+   network->populateArrays(true);
 
    double** train_data = new double*[4];
-   train_data[0] = new double[];
-   train_data[1] = new double[];
-   train_data[2] = new double[];
-   train_data[3] = new double[];
+   train_data[0] = new double[2];
+   train_data[1] = new double[2];
+   train_data[2] = new double[2];
+   train_data[3] = new double[2];
    train_data[0][0] = 0;
    train_data[0][1] = 0;
-   train_data[1][0]
-
+   train_data[1][0] = 0;
+   train_data[1][1] = 1;
+   train_data[2][0] = 1;
+   train_data[2][1] = 0;
+   train_data[3][0] = 1;
+   train_data[3][1] = 1;
 
    double train_answers[] = {0, 0, 0, 1};
    network->Train(train_data, train_answers); // Training the Network using predetermined training data
