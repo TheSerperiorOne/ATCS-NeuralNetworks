@@ -4,6 +4,8 @@
  * Description: This is an implementation of a simple A-B-1 Network designed for simple boolean algebra problems.
  */
 
+// TODO: Add comments to the code
+
 #include <cmath>
 #include <iostream>
 #include <time.h>
@@ -117,6 +119,15 @@ void printTime(double seconds)
  *    training_iterator: Used to iterate over all the test cases
  *    thetaj: Value used for calculating the Hidden Nodes
  *    thetai: Value used for calculating the Output
+ *    dummyError: Dummy variable used for calculating the error
+ *    lowerOmega: Value of T0 - F0
+ *    lowerPsi: Value of lowerOmega * sigmoidPrime(thetai)
+ *    EPrimeJ0: Value of -1 * h[J] * lowerPsi -> indicates derivative of the error with respect to the weights0j
+ *    deltaWj0: Value of -1 * lambda * EPrimeJ0 -> indicates the change in weights0j
+ *    capitalOmega: Value of lowerPsi * weights0j[J]
+ *    capitalPsi: Value of capitalOmega * sigmoidPrime(thetaj)
+ *    EPrimeJK: Value of -1 * a[K] * capitalPsi -> indicates derivative of the error with respect to the weightsjk
+ *    deltaWJK: Value of -1 * lambda * EPrimeJK -> indicates the change in weightsjk
  *    training_time: Time taken for training the network
  *    running_time: Time taken for running the network
  *    dummyStart: Dummy variable used for timing
@@ -156,7 +167,7 @@ struct NeuralNetwork
    double capitalOmega;
    double capitalPsi;
    double EPrimeJK;
-   double deltaWJK; // TODO: Add to javadoc above
+   double deltaWJK;
 
    int training_time;
    int running_time;
@@ -186,7 +197,7 @@ struct NeuralNetwork
     *   max: Maximum value of the random value assigned to weights
     *   train: Whether or not the network is in training mode (the alternative being running mode)
     */
-   void setConfigurationParameters(int numAct, int numHidLayer, int numHidInEachLayer, int lamb,
+   void setConfigurationParameters(int numAct, int numHidLayer, int numHidInEachLayer, double lamb,
                                    float errorThres, int maxIter, double min, double max, bool train)
    {
       this->k = numAct;
@@ -257,7 +268,7 @@ struct NeuralNetwork
       cout << "Error Threshold: " << this->errorThreshold << endl;
       cout << "Maximum Number of Iterations: " << this->maxIterations << endl;
       cout << "Random Value Minimum: " << this->randMin << endl;
-      cout << "Random Value Maximum: " << this->randMax << endl;
+      cout << "Random Value Maximum: " << this->randMax << endl << endl;
 
       return;
    }
@@ -265,14 +276,13 @@ struct NeuralNetwork
    /**
     * Trains the network using predetermined training data
     */
-   void Train(double** data, double* answers) // TODO: Figure out how to train network
+   void Train(double** data, double* answers) // TODO: Figure out how to add error and time taken
    {
       checkNetwork();
       error_reached = pow(2, 31) - 1;
       dummyError = pow(2, 31) - 1;
-      printArray(weights0j, j);
 
-      for (training_iterator = 0; training_iterator < maxIterations; ++training_iterator)
+      for (training_iterator = 0; training_iterator < maxIterations; ++training_iterator) // TODO: Quit Once error is good enough
       {
          a = data[training_iterator % 4];
 
@@ -307,7 +317,6 @@ struct NeuralNetwork
             deltaWj0 = -1 * lambda * EPrimeJ0;
             weights0j[J] += deltaWj0;
          }
-         printArray(weights0j, j);
 
          for (J = 0; J < j; ++J)
          {
@@ -392,13 +401,13 @@ struct NeuralNetwork
 /**
  * Main function of the program - creates and configures the network, trains it, and then runs it
  */
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) // TODO: Generalize data and data input (add user interface once network has been generalized)
 {
    /**
     * Creating and Configurating the Network based on pre-determined constants and designs
     */
    auto* network = new NeuralNetwork();
-   network->setConfigurationParameters(2, 1, 2, LAMBDA,
+   network->setConfigurationParameters(2, 1, 20, LAMBDA,
       ERROR_THRESHOLD, MAX_ITERATIONS, RANDOM_MIN, RANDOM_MAX, true);
    network->echoConfigurationParameters();
 
@@ -419,13 +428,16 @@ int main(int argc, char *argv[])
    train_data[3][0] = 1;
    train_data[3][1] = 1;
 
-   double train_answers[] = {0, 0, 0, 1};
+   double train_answers[] = {0, 1, 1, 0};
    network->Train(train_data, train_answers); // Training the Network using predetermined training data
    network->reportResults();
 
    network->training = false; // Running the Network using test data
-   double testdata[] = {0.0, 1.0}; // TODO Fix Implementation of Test and Train Data
-   network->Run(testdata);
+   double** testdata = train_data;
+   network->Run(testdata[0]);
+   network->Run(testdata[1]);
+   network->Run(testdata[2]);
+   network->Run(testdata[3]);
    // network->reportResults();
 
    return 0;
