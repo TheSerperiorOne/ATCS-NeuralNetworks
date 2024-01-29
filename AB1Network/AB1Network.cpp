@@ -100,7 +100,7 @@ void printTime(double seconds)
 } // void printTime(double seconds)
 
 /**
- * This is the structure of the Neural Network, which contains the following:
+ * This is the structure of the Neural Network, which contains the following variables:
  *    k: Number of Activations
  *    j: Number of Hidden Nodes in each Hidden Layer
  *    numHiddenLayers: Number of Hidden Layers
@@ -136,6 +136,9 @@ void printTime(double seconds)
  *    iterations: Number of iterations taken during training
  *    error_reached: Error value reached at the end of training or running
  *    reasonForEndOfTraining: Reason for the end of training
+ *
+ * And the following methods: // TODO: add methods to documentation
+ *
  */
 struct NeuralNetwork
 {
