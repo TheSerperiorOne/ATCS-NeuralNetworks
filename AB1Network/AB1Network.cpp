@@ -116,7 +116,8 @@ void printTime(double seconds)
  *    weightsjk: Weights between the Hidden Layers and the Output Layer
  *    training: Whether or not the network is in training mode (the alternative being running mode)
  *    I, J, K: Variables used for looping through the outputs, hidden layer, and activations respectively
- *    training_iterator: Used to iterate over all the test cases
+ *    epoch: Used to iterate over all the test cases
+ *    data_iterator: Used to iterate over all the data points in a train case
  *    thetaj: Value used for calculating the Hidden Nodes
  *    thetai: Value used for calculating the Output
  *    dummyError: Dummy variable used for calculating the error
@@ -155,7 +156,8 @@ struct NeuralNetwork
 
    bool training;
    int I, J, K;
-   int training_iterator;
+   int epoch;
+   int data_iterator;
    double thetaj;
    double thetai;
 
@@ -278,62 +280,72 @@ struct NeuralNetwork
     */
    void Train(double** data, double* answers) // TODO: Figure out how to add error and time taken
    {
+      training_time = 0;
+      dummyStart = clock();
       checkNetwork();
       error_reached = pow(2, 31) - 1;
       dummyError = pow(2, 31) - 1;
 
-      for (training_iterator = 0; training_iterator < maxIterations; ++training_iterator) // TODO: Quit Once error is good enough
+      for (epoch = 0; epoch < maxIterations && error_reached < errorThreshold; ++epoch)
       {
-         a = data[training_iterator % 4];
-
-         for (J = 0; J < j; ++J)
+         error_reached = 0;
+         for (data_iterator = 0; data_iterator < sizeof(data)/sizeof(data[0]); ++data_iterator)
          {
-            thetaj = 0;
-            for (K = 0; K < k; ++K)
+            a = data[data_iterator];
+
+            for (J = 0; J < j; ++J)
             {
-               thetaj += a[K] * weightsjk[J][K];
-            } // for (K = 0; K < k; ++K)
-            h[J] = sigmoid(thetaj);
-         } // for (J = 0; J < j; ++J)
+               thetaj = 0;
+               for (K = 0; K < k; ++K)
+               {
+                  thetaj += a[K] * weightsjk[J][K];
+               } // for (K = 0; K < k; ++K)
+               h[J] = sigmoid(thetaj);
+            } // for (J = 0; J < j; ++J)
 
-         thetai = 0;
-         for (J = 0; J < j; ++J)
-         {
-            thetai += h[J] * weights0j[J];
-         } // for (J = 0; J < j; ++J)
-         F0 = sigmoid(thetai);
-
-         dummyError = 0.5 * pow((answers[training_iterator % 4] - F0), 2);
-         error_reached = dummyError;
-
-         cout << "Iteration Number: " << training_iterator << ", Test Case: " << a[0] << " & " << a[1] <<
-            ", Expected Output: " << answers[training_iterator % 4] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
-
-         lowerOmega = answers[training_iterator % 4] - F0;
-         lowerPsi = lowerOmega * sigmoidPrime(thetai);
-         for (J = 0; J < j; ++J)
-         {
-            EPrimeJ0 = -1 * h[J] * lowerPsi;
-            deltaWj0 = -1 * lambda * EPrimeJ0;
-            weights0j[J] += deltaWj0;
-         }
-
-         for (J = 0; J < j; ++J)
-         {
-            capitalOmega = lowerPsi * weights0j[J];
-            capitalPsi = capitalOmega * sigmoidPrime(thetaj);
-
-            for (K = 0; K < k; ++K)
+            thetai = 0;
+            for (J = 0; J < j; ++J)
             {
-               EPrimeJK = -1 * a[K] * capitalPsi;
-               deltaWJK = -1 * lambda * EPrimeJK;
-               weightsjk[J][K] += deltaWJK;
+               thetai += h[J] * weights0j[J];
+            } // for (J = 0; J < j; ++J)
+            F0 = sigmoid(thetai);
+
+            dummyError = 0.5 * pow((answers[epoch % 4] - F0), 2);
+            error_reached += dummyError;
+
+            cout << "Iteration Number: " << epoch << ", Test Case: " << a[0] << " & " << a[1] <<
+               ", Expected Output: " << answers[epoch % 4] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
+
+            lowerOmega = answers[epoch % 4] - F0;
+            lowerPsi = lowerOmega * sigmoidPrime(thetai);
+            for (J = 0; J < j; ++J)
+            {
+               EPrimeJ0 = -1 * h[J] * lowerPsi;
+               deltaWj0 = -1 * lambda * EPrimeJ0;
+               weights0j[J] += deltaWj0;
             }
-         } // for (J = 0; J < j; ++J)
-      } // for (training_iterator = 0; training_iterator ...
 
-      if (training_iterator == maxIterations) reasonForEndOfTraining = "Maximum Number of Iterations Reached";
+            for (J = 0; J < j; ++J)
+            {
+               capitalOmega = lowerPsi * weights0j[J];
+               capitalPsi = capitalOmega * sigmoidPrime(thetaj);
+
+               for (K = 0; K < k; ++K)
+               {
+                  EPrimeJK = -1 * a[K] * capitalPsi;
+                  deltaWJK = -1 * lambda * EPrimeJK;
+                  weightsjk[J][K] += deltaWJK;
+               }
+            } // for (J = 0; J < j; ++J)
+         } // for (data_iterator = 0; data_iterator ...
+         error_reached /= sizeof(data)/sizeof(data[0]);
+      } // for (epoch = 0; epoch ...
+
+      if (epoch == maxIterations) reasonForEndOfTraining = "Maximum Number of Iterations Reached";
       else reasonForEndOfTraining = "Error Threshold Reached";
+
+      training_time = clock() - dummyStart;
+      iterations = epoch;
 
       return;
    } // void Train()
@@ -398,10 +410,24 @@ struct NeuralNetwork
    } // reportResults()
 }; // struct NeuralNetwork
 
+
+/**
+ *
+ */
+void userInputRunSection(NeuralNetwork* network)
+{
+   double* testdata = new double[2];
+   cout << "Input 1st Value for Network: " << endl;
+   cin >> testdata[0];
+   cout << "Input 2nd Value for Network: " << endl;
+   cin >> testdata[1];
+   network->Run(testdata);
+}
+
 /**
  * Main function of the program - creates and configures the network, trains it, and then runs it
  */
-int main(int argc, char *argv[]) // TODO: Generalize data and data input (add user interface once network has been generalized)
+int main(int argc, char *argv[])
 {
    /**
     * Creating and Configurating the Network based on pre-determined constants and designs
@@ -414,7 +440,7 @@ int main(int argc, char *argv[]) // TODO: Generalize data and data input (add us
    network->allocateArrayMemory(); // Allocating Arrays in Network
    network->populateArrays(true);
 
-   double** train_data = new double*[4];
+   double** train_data = new double*[4]; // Setting up training data
    train_data[0] = new double[2];
    train_data[1] = new double[2];
    train_data[2] = new double[2];
@@ -428,17 +454,14 @@ int main(int argc, char *argv[]) // TODO: Generalize data and data input (add us
    train_data[3][0] = 1;
    train_data[3][1] = 1;
 
-   double train_answers[] = {0, 1, 1, 0};
+   double train_answers[] = {0, 1, 1, 0}; // Setting up training answers
+
    network->Train(train_data, train_answers); // Training the Network using predetermined training data
    network->reportResults();
 
    network->training = false; // Running the Network using test data
-   double** testdata = train_data;
-   network->Run(testdata[0]);
-   network->Run(testdata[1]);
-   network->Run(testdata[2]);
-   network->Run(testdata[3]);
-   // network->reportResults();
+   userInputRunSection(network);
+   network->reportResults();
 
    return 0;
 } // int main(int argc, char *argv[])
