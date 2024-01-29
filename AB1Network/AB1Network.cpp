@@ -4,8 +4,6 @@
  * Description: This is an implementation of a simple A-B-1 Network designed for simple boolean algebra problems.
  */
 
-// TODO: Add comments to the code
-
 #include <cmath>
 #include <iostream>
 #include <time.h>
@@ -176,8 +174,8 @@ struct NeuralNetwork
 
    int training_time;
    int running_time;
-   int dummyStart;
-   int dummyEnd;
+   long dummyStart;
+   long dummyEnd;
    int iterations;
    float error_reached;
    string reasonForEndOfTraining;
@@ -268,6 +266,8 @@ struct NeuralNetwork
     */
    void checkNetwork()
    {
+      if (training) cout << "Training the Network!" << endl;
+      else cout << "Running the Network!" << endl;
       cout << "Network Type: " << k << "-" << j << "-" << 1 << endl;
       cout << "Lambda Value: " << this->lambda << endl;
       cout << "Error Threshold: " << this->errorThreshold << endl;
@@ -281,18 +281,19 @@ struct NeuralNetwork
    /**
     * Trains the network using predetermined training data
     */
-   void Train(double** data, double* answers)
+   void Train(double** data, double* answers) // Fix Time Implementation
    {
       training_time = 0;
       dummyStart = clock();
       checkNetwork();
-      error_reached = pow(2, 31) - 1;
-      dummyError = pow(2, 31) - 1;
+      error_reached = pow(2, 20);
+      dummyError = 0;
 
-      for (epoch = 0; epoch < maxIterations && error_reached < errorThreshold; ++epoch)
+      for (epoch = 0; epoch < maxIterations && error_reached > errorThreshold; ++epoch)
       {
          error_reached = 0;
-         for (data_iterator = 0; data_iterator < sizeof(data)/sizeof(data[0]); ++data_iterator)
+         cout << "Gotten Here!";
+         for (data_iterator = 0; data_iterator < 4; ++data_iterator)
          {
             a = data[data_iterator];
 
@@ -314,13 +315,13 @@ struct NeuralNetwork
             } // for (J = 0; J < j; ++J)
             F0 = sigmoid(thetai);
 
-            dummyError = 0.5 * pow((answers[epoch % 4] - F0), 2);
+            dummyError = 0.5 * pow((answers[data_iterator] - F0), 2);
             error_reached += dummyError;
 
             cout << "Iteration Number: " << epoch << ", Test Case: " << a[0] << " & " << a[1] <<
-               ", Expected Output: " << answers[epoch % 4] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
+               ", Expected Output: " << answers[data_iterator] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
 
-            lowerOmega = answers[epoch % 4] - F0;
+            lowerOmega = answers[data_iterator] - F0;
             lowerPsi = lowerOmega * sigmoidPrime(thetai);
             for (J = 0; J < j; ++J)
             {
@@ -358,7 +359,7 @@ struct NeuralNetwork
     * Runs the network using predetermined test data. Each node is calculated using the sigmoid function applied
     *    onto a dot product of the weights and the activations
     */
-   void Run(double *inputValues)
+   double Run(double *inputValues)
    {
       checkNetwork();
       a = inputValues;
@@ -382,10 +383,9 @@ struct NeuralNetwork
       } // for (J = 0; J < j; ++J)
       F0 = sigmoid(thetai);
 
-      cout << "Output: " << F0 << endl;
       running_time = clock() - dummyStart;
 
-      return;
+      return F0;
    } // void Run(double inputValues[])
 
    /**
@@ -429,8 +429,8 @@ void userInputRunSection(NeuralNetwork* network)
    cin >> testdata[0];
    cout << "Input 2nd Value for Network: " << endl;
    cin >> testdata[1];
-   network->Run(testdata);
-}
+   cout << "Output: " << endl << endl <<  network->Run(testdata) << endl << endl;
+} // void userInputRunSection(NeuralNetwork* network)
 
 /**
  * Main function of the program - creates and configures the network, trains it, and then runs it
@@ -440,15 +440,18 @@ int main(int argc, char *argv[])
    /**
     * Creating and Configurating the Network based on pre-determined constants and designs
     */
-   auto* network = new NeuralNetwork();
+   NeuralNetwork* network = new NeuralNetwork();
    network->setConfigurationParameters(2, 1, 20, LAMBDA,
       ERROR_THRESHOLD, MAX_ITERATIONS, RANDOM_MIN, RANDOM_MAX, true);
    network->echoConfigurationParameters();
+   cout << endl;
 
    network->allocateArrayMemory(); // Allocating Arrays in Network
    network->populateArrays(true);
 
-   auto** train_data = new double*[4]; // Setting up training data
+   cout << endl;
+
+   double** train_data = new double*[4]; // Setting up training data
    train_data[0] = new double[2];
    train_data[1] = new double[2];
    train_data[2] = new double[2];
@@ -462,7 +465,7 @@ int main(int argc, char *argv[])
    train_data[3][0] = 1;
    train_data[3][1] = 1;
 
-   double train_answers[] = {0, 1, 1, 0}; // Setting up training answers
+   double train_answers[] = {0, 1, 1, 1}; // Setting up training answers
 
    network->Train(train_data, train_answers); // Training the Network using predetermined training data
    network->reportResults();
@@ -472,7 +475,7 @@ int main(int argc, char *argv[])
    network->reportResults();
 
    delete network;
-   delete train_data;
+   delete[] train_data;
 
    return 0;
 } // int main(int argc, char *argv[])
