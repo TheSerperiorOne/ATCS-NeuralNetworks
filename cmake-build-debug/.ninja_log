@@ -1,0 +1,5 @@
+# ninja log v5
+0	589	1706308320686518974	CMakeFiles/ATCS_Neural_Networks.dir/main.cpp.o	3edcf7d9f7f347c3
+2	394	1706308357018039149	CMakeFiles/ATCS_Neural_Networks.dir/AB1Network/AB1Network.cpp.o	ec1bd8e71e52cbd1
+1	359	1706308410602700454	CMakeFiles/ATCS_Neural_Networks.dir/AB1Network/AB1Network.cpp.o	ec1bd8e71e52cbd1
+362	421	1706308410671718294	ATCS_Neural_Networks	3f1609c92847a82

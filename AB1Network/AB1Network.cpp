@@ -278,7 +278,7 @@ struct NeuralNetwork
    /**
     * Trains the network using predetermined training data
     */
-   void Train(double** data, double* answers) // TODO: Figure out how to add error and time taken
+   void Train(double** data, double* answers)
    {
       training_time = 0;
       dummyStart = clock();
@@ -293,6 +293,7 @@ struct NeuralNetwork
          {
             a = data[data_iterator];
 
+            thetaj = 0;
             for (J = 0; J < j; ++J)
             {
                thetaj = 0;
@@ -354,10 +355,12 @@ struct NeuralNetwork
     * Runs the network using predetermined test data. Each node is calculated using the sigmoid function applied
     *    onto a dot product of the weights and the activations
     */
-   void Run(double *inputValues) // TODO: Figure out how to find the error and time taken
+   void Run(double *inputValues)
    {
       checkNetwork();
       a = inputValues;
+
+      dummyStart = clock();
 
       for (J = 0; J < j; ++J)
       {
@@ -377,6 +380,8 @@ struct NeuralNetwork
       F0 = sigmoid(thetai);
 
       cout << "Output: " << F0 << endl;
+      running_time = clock() - dummyStart;
+
       return;
    } // void Run(double inputValues[])
 
@@ -412,7 +417,7 @@ struct NeuralNetwork
 
 
 /**
- *
+ * Accepts input from the user and runs the network using the input values. Specific to Boolean Algebra
  */
 void userInputRunSection(NeuralNetwork* network)
 {
@@ -440,7 +445,7 @@ int main(int argc, char *argv[])
    network->allocateArrayMemory(); // Allocating Arrays in Network
    network->populateArrays(true);
 
-   double** train_data = new double*[4]; // Setting up training data
+   auto** train_data = new double*[4]; // Setting up training data
    train_data[0] = new double[2];
    train_data[1] = new double[2];
    train_data[2] = new double[2];
@@ -462,6 +467,9 @@ int main(int argc, char *argv[])
    network->training = false; // Running the Network using test data
    userInputRunSection(network);
    network->reportResults();
+
+   delete network;
+   delete train_data;
 
    return 0;
 } // int main(int argc, char *argv[])
