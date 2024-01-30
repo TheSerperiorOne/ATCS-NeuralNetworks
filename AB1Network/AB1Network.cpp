@@ -172,10 +172,10 @@ struct NeuralNetwork
    double EPrimeJK;
    double deltaWJK;
 
-   int training_time;
-   int running_time;
-   long dummyStart;
-   long dummyEnd;
+   double training_time;
+   double running_time;
+   time_t dummyStart;
+   time_t dummyEnd;
    int iterations;
    float error_reached;
    string reasonForEndOfTraining;
@@ -284,7 +284,7 @@ struct NeuralNetwork
    void Train(double** data, double* answers) // Fix Time Implementation
    {
       training_time = 0;
-      dummyStart = clock();
+      time(&dummyStart);
       checkNetwork();
       error_reached = pow(2, 20);
       dummyError = 0;
@@ -349,7 +349,7 @@ struct NeuralNetwork
       if (epoch == maxIterations) reasonForEndOfTraining = "Maximum Number of Iterations Reached";
       else reasonForEndOfTraining = "Error Threshold Reached";
 
-      training_time = clock() - dummyStart;
+      training_time = double(time(&dummyEnd) - dummyStart);
       iterations = epoch;
 
       return;
@@ -364,7 +364,7 @@ struct NeuralNetwork
       checkNetwork();
       a = inputValues;
 
-      dummyStart = clock();
+      time(&dummyStart);
 
       for (J = 0; J < j; ++J)
       {
@@ -383,7 +383,7 @@ struct NeuralNetwork
       } // for (J = 0; J < j; ++J)
       F0 = sigmoid(thetai);
 
-      running_time = clock() - dummyStart;
+      running_time = double(time(&dummyEnd) - dummyStart);
 
       return F0;
    } // void Run(double inputValues[])
