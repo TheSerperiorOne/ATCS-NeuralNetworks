@@ -8,7 +8,6 @@
 #include <iostream>
 #include <time.h>
 
-#define largeNumber              (int) INT_MAX
 #define numberActivations        (int) 2
 #define numberHiddenLayers       (int) 1
 #define numberHiddenNodes        (int) 3
@@ -370,7 +369,7 @@ struct NeuralNetwork
 
       checkNetwork();
 
-      error_reached = largeNumber;
+      error_reached = INT_MAX;
       dummyError = 0;
       epoch = 0;
 
