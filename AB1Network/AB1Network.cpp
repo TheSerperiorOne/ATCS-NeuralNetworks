@@ -8,8 +8,12 @@
 #include <iostream>
 #include <time.h>
 
+#define largeNumber (int) INT_MAX
+#define numberActivations (int) 2
+#define numberHiddenLayers (int) 1
+#define numberHiddenNodes (int) 2
 #define MAX_ITERATIONS (int) 100000
-#define LAMBDA (double) 1.0
+#define LAMBDA (double) 0.3
 #define RANDOM_MIN ((double) -1.5)
 #define RANDOM_MAX (double) 1.5
 #define ERROR_THRESHOLD (double) (2.0 * pow(10, -4))
@@ -27,7 +31,7 @@ using namespace std;
  */
 double sigmoid(double value)
 {
-    return 1/(1 + exp(-1 * value));
+   return 1/(1 + exp(-1 * value));
 }
 
 /**
@@ -39,16 +43,6 @@ double sigmoidPrime(double value)
 {
     double sig = sigmoid(value);
     return sig * (1 - sig);
-}
-
-/**
- *
- */
-void printArray(double *array, int size)
-{
-   for (int looper = 0; looper < size; looper++) cout << array[looper] << ", ";
-   cout << endl << "Size of Array: " << size << endl;
-   return;
 }
 
 /**
@@ -112,19 +106,23 @@ void printTime(double seconds)
  *    F0: Output
  *    weights0j: Weights between the Input Layer and the Hidden Layers
  *    weightsjk: Weights between the Hidden Layers and the Output Layer
+ *    train_data: Training Data (Inputs)
+ *    train_answers: Training Answers (Expected Outputs)
+ *    test_data: Test Data (Inputs)
+ *    numCases: Number of Test Cases
  *    training: Whether or not the network is in training mode (the alternative being running mode)
  *    I, J, K: Variables used for looping through the outputs, hidden layer, and activations respectively
  *    epoch: Used to iterate over all the test cases
  *    data_iterator: Used to iterate over all the data points in a train case
- *    thetaj: Value used for calculating the Hidden Nodes
- *    thetai: Value used for calculating the Output
+ *    thetaj: Values used for calculating the Hidden Nodes - dot product of activations and corresponding weights
+ *    thetai: Values used for calculating the Output - dot product of hidden layers and corresponding weights
  *    dummyError: Dummy variable used for calculating the error
  *    lowerOmega: Value of T0 - F0
  *    lowerPsi: Value of lowerOmega * sigmoidPrime(thetai)
  *    EPrimeJ0: Value of -1 * h[J] * lowerPsi -> indicates derivative of the error with respect to the weights0j
  *    deltaWj0: Value of -1 * lambda * EPrimeJ0 -> indicates the change in weights0j
- *    capitalOmega: Value of lowerPsi * weights0j[J]
- *    capitalPsi: Value of capitalOmega * sigmoidPrime(thetaj)
+ *    capitalOmega: Values of lowerPsi * weights0j[J]
+ *    capitalPsi: Values of capitalOmega * sigmoidPrime(thetaj)
  *    EPrimeJK: Value of -1 * a[K] * capitalPsi -> indicates derivative of the error with respect to the weightsjk
  *    deltaWJK: Value of -1 * lambda * EPrimeJK -> indicates the change in weightsjk
  *    training_time: Time taken for training the network
@@ -156,6 +154,7 @@ void printTime(double seconds)
  */
 struct NeuralNetwork
 {
+   int i;
    int k;
    int j;
    int numHiddenLayers;
@@ -170,21 +169,25 @@ struct NeuralNetwork
    double F0;
    double* weights0j;
    double** weightsjk;
+   double** train_data;
+   double* train_answers;
+   double** test_data;
+   int numCases;
 
    bool training;
    int I, J, K;
    int epoch;
    int data_iterator;
-   double thetaj;
-   double thetai;
+   double* thetaj;
+   double* thetai;
 
    float dummyError;
    double lowerOmega;
    double lowerPsi;
    double EPrimeJ0;
    double deltaWj0;
-   double capitalOmega;
-   double capitalPsi;
+   double* capitalOmega;
+   double* capitalPsi;
    double EPrimeJK;
    double deltaWJK;
 
@@ -219,6 +222,7 @@ struct NeuralNetwork
    void setConfigurationParameters(int numAct, int numHidLayer, int numHidInEachLayer, double lamb,
                                    float errorThres, int maxIter, double min, double max, bool train)
    {
+      this->i = 1;
       this->k = numAct;
       this->numHiddenLayers = numHidLayer;
       this->j = numHidInEachLayer;
@@ -228,6 +232,9 @@ struct NeuralNetwork
       this->randMin = min;
       this->randMax = max;
       this->training = train;
+
+      this->numCases = 4;
+
       return;
    } // void setConfigurationParameters(int numAct, int numHidLayer ...
 
@@ -252,8 +259,20 @@ struct NeuralNetwork
     */
    void allocateArrayMemory()
    {
+      train_data = new double*[4];
+      for (int i = 0; i < 4; ++i) train_data[i] = new double[2];
+      train_answers = new double[4];
+      test_data = new double*[4];
+      for (int i = 0; i < 4; ++i) test_data[i] = new double[2];
+
+      capitalOmega = new double[j];
+      capitalPsi = new double[j];
+
       a = new double[k];
       h = new double[j];
+
+      thetai = new double[i];
+      thetaj = new double[j];
 
       weights0j = new double[j];
 
@@ -270,8 +289,38 @@ struct NeuralNetwork
     */
    void populateArrays(bool random)
    {
-      for (int J = 0; J < j; ++J) weights0j[J] = randomValue();
-      for (int J = 0; J < j; ++J) for (int K = 0; K < k; ++K) weightsjk[J][K] = randomValue();
+      for (J = 0; J < j; ++J) weights0j[J] = randomValue();
+      for (J = 0; J < j; ++J) for (int K = 0; K < k; ++K) weightsjk[J][K] = randomValue();
+
+      for (J = 0; J < j; ++J) thetaj[J] = 0;
+      for (I = 0; I < i; ++I) thetai[I] = 0;
+
+      for (J = 0; J < j; ++J) capitalOmega[J] = 0;
+      for (J = 0; J < j; ++J) capitalPsi[J] = 0;
+
+      train_data[0][0] = 0;
+      train_data[0][1] = 0;
+      train_data[1][0] = 0;
+      train_data[1][1] = 1;
+      train_data[2][0] = 1;
+      train_data[2][1] = 0;
+      train_data[3][0] = 1;
+      train_data[3][1] = 1;
+
+      test_data[0][0] = 0;
+      test_data[0][1] = 0;
+      test_data[1][0] = 0;
+      test_data[1][1] = 1;
+      test_data[2][0] = 1;
+      test_data[2][1] = 0;
+      test_data[3][0] = 1;
+      test_data[3][1] = 1;
+
+      train_answers[0] = 0;
+      train_answers[1] = 0;
+      train_answers[2] = 0;
+      train_answers[3] = 1;
+
       cout << "Populated Arrays!" << endl;
       return;
    } //void populateArrays()
@@ -295,14 +344,15 @@ struct NeuralNetwork
    }
 
    /**
-    * Trains the network using predetermined training data
+    * Trains the network using predetermined training data using the gradient descent algorithm, which is used to
+    *    minimize the error by adjusting the weights derivative of the error with respect to the weights
     */
-   void Train(double** data, double* answers)
+   void Train()
    {
       training_time = 0;
       time(&dummyStart);
       checkNetwork();
-      error_reached = pow(2, 20);
+      error_reached = largeNumber;
       dummyError = 0;
 
       for (epoch = 0; epoch < maxIterations && error_reached > errorThreshold; ++epoch)
@@ -310,34 +360,34 @@ struct NeuralNetwork
          error_reached = 0;
          for (data_iterator = 0; data_iterator < 4; ++data_iterator)
          {
-            a = data[data_iterator];
+            a = train_data[data_iterator];
 
-            thetaj = 0;
+            thetaj[J] = 0;
             for (J = 0; J < j; ++J)
             {
-               thetaj = 0;
+               thetaj[J] = 0;
                for (K = 0; K < k; ++K)
                {
-                  thetaj += a[K] * weightsjk[J][K];
+                  thetaj[J] += a[K] * weightsjk[J][K];
                } // for (K = 0; K < k; ++K)
-               h[J] = sigmoid(thetaj);
+               h[J] = sigmoid(thetaj[J]);
             } // for (J = 0; J < j; ++J)
 
-            thetai = 0;
+            thetai[0] = 0;
             for (J = 0; J < j; ++J)
             {
-               thetai += h[J] * weights0j[J];
+               thetai[0] += h[J] * weights0j[J];
             } // for (J = 0; J < j; ++J)
-            F0 = sigmoid(thetai);
+            F0 = sigmoid(thetai[0]);
 
-            dummyError = 0.5 * pow((answers[data_iterator] - F0), 2);
+            dummyError = 0.5 * pow((train_answers[data_iterator] - F0), 2);
             error_reached += dummyError;
 
             cout << "Iteration Number: " << epoch << ", Test Case: " << a[0] << " & " << a[1] <<
-               ", Expected Output: " << answers[data_iterator] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
+               ", Expected Output: " << train_answers[data_iterator] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
 
-            lowerOmega = answers[data_iterator] - F0;
-            lowerPsi = lowerOmega * sigmoidPrime(thetai);
+            lowerOmega = train_answers[data_iterator] - F0;
+            lowerPsi = lowerOmega * sigmoidPrime(thetai[0]);
             for (J = 0; J < j; ++J)
             {
                EPrimeJ0 = -1 * h[J] * lowerPsi;
@@ -347,18 +397,18 @@ struct NeuralNetwork
 
             for (J = 0; J < j; ++J)
             {
-               capitalOmega = lowerPsi * weights0j[J];
-               capitalPsi = capitalOmega * sigmoidPrime(thetaj);
+               capitalOmega[J] = lowerPsi * weights0j[J];
+               capitalPsi[J] = capitalOmega[J] * sigmoidPrime(thetaj[J]);
 
                for (K = 0; K < k; ++K)
                {
-                  EPrimeJK = -1 * a[K] * capitalPsi;
+                  EPrimeJK = -1 * a[K] * capitalPsi[J];
                   deltaWJK = -1 * lambda * EPrimeJK;
                   weightsjk[J][K] += deltaWJK;
                } // for (K = 0; K < k; ++K)
             } // for (J = 0; J < j; ++J)
          } // for (data_iterator = 0; data_iterator ...
-         error_reached /= sizeof(data)/sizeof(data[0]);
+         error_reached /= numCases;
       } // for (epoch = 0; epoch ...
 
       if (epoch == maxIterations) reasonForEndOfTraining = "Maximum Number of Iterations Reached";
@@ -383,22 +433,23 @@ struct NeuralNetwork
 
       for (J = 0; J < j; ++J)
       {
-         thetaj = 0;
+         thetaj[J] = 0;
          for (K = 0; K < k; ++K)
          {
-            thetaj += a[K] * weightsjk[J][K];
+            thetaj[J] += a[K] * weightsjk[J][K];
          } // for (K = 0; K < k; ++K)
-         h[J] = sigmoid(thetaj);
+         h[J] = sigmoid(thetaj[J]);
       } // for (J = 0; J < j; ++J)
 
-      thetai = 0;
+      thetai[0] = 0;
       for (J = 0; J < j; ++J)
       {
-         thetai += h[J] * weights0j[J];
+         thetai[0] += h[J] * weights0j[J];
       } // for (J = 0; J < j; ++J)
-      F0 = sigmoid(thetai);
+      F0 = sigmoid(thetai[0]);
 
-      running_time = double(time(&dummyEnd) - dummyStart);
+      time(&dummyEnd);
+      running_time = double(dummyEnd - dummyStart);
 
       return F0;
    } // void Run(double inputValues[])
@@ -437,15 +488,15 @@ struct NeuralNetwork
 /**
  * Accepts input from the user and runs the network using the input values. Specific to Boolean Algebra
  */
-void userInputRunSection(NeuralNetwork* network)
+void testingData(NeuralNetwork* network)
 {
-   double* testdata = new double[2];
-   cout << "Input 1st Value for Network: " << endl;
-   cin >> testdata[0];
-   cout << "Input 2nd Value for Network: " << endl;
-   cin >> testdata[1];
-   cout << "Output: " << endl << endl <<  network->Run(testdata) << endl << endl;
-} // void userInputRunSection(NeuralNetwork* network)
+   for (int i = 0; i < 4; ++i)
+   {
+      cout << "Running the Network with Test Data: " << network->test_data[i][0] << " & " << network->test_data[i][1] << endl;
+      cout << "Output: " << network->Run(network->test_data[i]) << endl << endl;
+   }
+   return;
+} // void testingData(NeuralNetwork* network)
 
 /**
  * Main function of the program - creates and configures the network, trains it, and then runs it
@@ -453,7 +504,7 @@ void userInputRunSection(NeuralNetwork* network)
 int main(int argc, char *argv[])
 {
    NeuralNetwork* network = new NeuralNetwork(); // Creating and Configurating the Network based on pre-determined constants and designs
-   network->setConfigurationParameters(2, 1, 32, LAMBDA,
+   network->setConfigurationParameters(numberActivations, numberHiddenLayers, numberHiddenNodes, LAMBDA,
       ERROR_THRESHOLD, MAX_ITERATIONS, RANDOM_MIN, RANDOM_MAX, true);
    network->echoConfigurationParameters();
    cout << endl;
@@ -463,32 +514,14 @@ int main(int argc, char *argv[])
 
    cout << endl;
 
-   double** train_data = new double*[4]; // Setting up training data
-   train_data[0] = new double[2];
-   train_data[1] = new double[2];
-   train_data[2] = new double[2];
-   train_data[3] = new double[2];
-   train_data[0][0] = 0;
-   train_data[0][1] = 0;
-   train_data[1][0] = 0;
-   train_data[1][1] = 1;
-   train_data[2][0] = 1;
-   train_data[2][1] = 0;
-   train_data[3][0] = 1;
-   train_data[3][1] = 1;
-
-   double train_answers[] = {0, 1, 1, 0}; // Setting up training answers
-
-   network->Train(train_data, train_answers); // Training the Network using predetermined training data
+   network->Train(); // Training the Network using predetermined training data
    network->reportResults();
 
    network->training = false; // Running the Network using test data
-   userInputRunSection(network);
+   testingData(network);
    network->reportResults();
 
-   // Deletes all objects and pointers used in the program
-   delete network;
-   delete[] train_data;
+   delete network;// Deletes all objects and pointers used in the program
 
    return 0;
 } // int main(int argc, char *argv[])
