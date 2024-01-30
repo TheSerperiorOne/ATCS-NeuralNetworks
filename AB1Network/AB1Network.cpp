@@ -11,7 +11,7 @@
 #define largeNumber              (int) INT_MAX
 #define numberActivations        (int) 2
 #define numberHiddenLayers       (int) 1
-#define numberHiddenNodes        (int) 32
+#define numberHiddenNodes        (int) 3
 #define MAX_ITERATIONS           (int) 100000
 #define LAMBDA                   (double) 0.3
 #define RANDOM_MIN               (double) -1.5
@@ -322,8 +322,8 @@ struct NeuralNetwork
       train_data[3][1] = 1;
 
       train_answers[0] = 0; // Initializing Training Answers
-      train_answers[1] = 1;
-      train_answers[2] = 1;
+      train_answers[1] = 0;
+      train_answers[2] = 0;
       train_answers[3] = 1;
 
       test_data[0][0] = 0; // Initializing Test Data
