@@ -9,7 +9,7 @@
 #include <time.h>
 
 #define MAX_ITERATIONS (int) 100000
-#define LAMBDA (double) 0.3
+#define LAMBDA (double) 1.0
 #define RANDOM_MIN ((double) -1.5)
 #define RANDOM_MAX (double) 1.5
 #define ERROR_THRESHOLD (double) (2.0 * pow(10, -4))
@@ -135,7 +135,7 @@ void printTime(double seconds)
  *    error_reached: Error value reached at the end of training or running
  *    reasonForEndOfTraining: Reason for the end of training
  *
- * And the following methods: // TODO: add methods to documentation
+ * And the following methods:
  *   randomValue() - Outputs a random value based on the range as given in the configuration parameters
  *   setConfigurationParameters() - Sets the configuration parameters for the network based on the following parameters
  *   echoConfigurationParameters() - Outputs the configuration parameters for the network
@@ -454,7 +454,7 @@ void userInputRunSection(NeuralNetwork* network)
 int main(int argc, char *argv[])
 {
    NeuralNetwork* network = new NeuralNetwork(); // Creating and Configurating the Network based on pre-determined constants and designs
-   network->setConfigurationParameters(2, 1, 20, LAMBDA,
+   network->setConfigurationParameters(2, 1, 32, LAMBDA,
       ERROR_THRESHOLD, MAX_ITERATIONS, RANDOM_MIN, RANDOM_MAX, true);
    network->echoConfigurationParameters();
    cout << endl;
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
    train_data[3][0] = 1;
    train_data[3][1] = 1;
 
-   double train_answers[] = {0, 1, 1, 1}; // Setting up training answers
+   double train_answers[] = {0, 1, 1, 0}; // Setting up training answers
 
    network->Train(train_data, train_answers); // Training the Network using predetermined training data
    network->reportResults();
@@ -487,6 +487,7 @@ int main(int argc, char *argv[])
    userInputRunSection(network);
    network->reportResults();
 
+   // Deletes all objects and pointers used in the program
    delete network;
    delete[] train_data;
 
