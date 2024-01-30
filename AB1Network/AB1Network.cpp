@@ -136,6 +136,22 @@ void printTime(double seconds)
  *    reasonForEndOfTraining: Reason for the end of training
  *
  * And the following methods: // TODO: add methods to documentation
+ *   randomValue() - Outputs a random value based on the range as given in the configuration parameters
+ *   setConfigurationParameters() - Sets the configuration parameters for the network based on the following parameters
+ *   echoConfigurationParameters() - Outputs the configuration parameters for the network
+ *   allocateArrayMemory() - Allocates memory for the activations, hidden nodes, and weights of the network
+ *   populateArrays() - Populates the arrays with random values, unless the network is a 2-2-1 network, in which
+ *          it manually overrides
+ *   checkNetwork() - Outputs the Network Type, Lambda Value, Error Threshold, Maximum Number of Iterations,
+ *          and the Random Number Range
+ *   Train() - Trains the network using predetermined training data. The training is done using the gradient
+ *          descent algorithm, which is used to minimize the error by adjusting the weights derivative of the error
+ *          with respect to the weights
+ *   Run() - Runs the network using predetermined test data. Each node is calculated using the sigmoid function
+ *          applied onto a dot product of the weights and the activations
+ *   reportResults() - Reports the results of the training or running of the network, depending on the mode
+ *          the network is in training mode or not
+ *
  *
  */
 struct NeuralNetwork
@@ -281,7 +297,7 @@ struct NeuralNetwork
    /**
     * Trains the network using predetermined training data
     */
-   void Train(double** data, double* answers) // Fix Time Implementation
+   void Train(double** data, double* answers)
    {
       training_time = 0;
       time(&dummyStart);
@@ -289,7 +305,7 @@ struct NeuralNetwork
       error_reached = pow(2, 20);
       dummyError = 0;
 
-      for (epoch = 0; epoch < maxIterations /**&& error_reached > errorThreshold*/; ++epoch)
+      for (epoch = 0; epoch < maxIterations && error_reached > errorThreshold; ++epoch)
       {
          error_reached = 0;
          cout << "Gotten Here!";
@@ -328,7 +344,7 @@ struct NeuralNetwork
                EPrimeJ0 = -1 * h[J] * lowerPsi;
                deltaWj0 = -1 * lambda * EPrimeJ0;
                weights0j[J] += deltaWj0;
-            }
+            } // for (J = 0; J < j; ++J)
 
             for (J = 0; J < j; ++J)
             {
@@ -340,7 +356,7 @@ struct NeuralNetwork
                   EPrimeJK = -1 * a[K] * capitalPsi;
                   deltaWJK = -1 * lambda * EPrimeJK;
                   weightsjk[J][K] += deltaWJK;
-               }
+               } // for (K = 0; K < k; ++K)
             } // for (J = 0; J < j; ++J)
          } // for (data_iterator = 0; data_iterator ...
          error_reached /= sizeof(data)/sizeof(data[0]);
@@ -437,10 +453,7 @@ void userInputRunSection(NeuralNetwork* network)
  */
 int main(int argc, char *argv[])
 {
-   /**
-    * Creating and Configurating the Network based on pre-determined constants and designs
-    */
-   NeuralNetwork* network = new NeuralNetwork();
+   NeuralNetwork* network = new NeuralNetwork(); // Creating and Configurating the Network based on pre-determined constants and designs
    network->setConfigurationParameters(2, 1, 20, LAMBDA,
       ERROR_THRESHOLD, MAX_ITERATIONS, RANDOM_MIN, RANDOM_MAX, true);
    network->echoConfigurationParameters();
