@@ -308,7 +308,6 @@ struct NeuralNetwork
       for (epoch = 0; epoch < maxIterations && error_reached > errorThreshold; ++epoch)
       {
          error_reached = 0;
-         cout << "Gotten Here!";
          for (data_iterator = 0; data_iterator < 4; ++data_iterator)
          {
             a = data[data_iterator];
