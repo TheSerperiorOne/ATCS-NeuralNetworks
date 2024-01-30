@@ -289,7 +289,7 @@ struct NeuralNetwork
       error_reached = pow(2, 20);
       dummyError = 0;
 
-      for (epoch = 0; epoch < maxIterations && error_reached > errorThreshold; ++epoch)
+      for (epoch = 0; epoch < maxIterations /**&& error_reached > errorThreshold*/; ++epoch)
       {
          error_reached = 0;
          cout << "Gotten Here!";
