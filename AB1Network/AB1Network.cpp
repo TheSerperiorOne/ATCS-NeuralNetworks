@@ -10,7 +10,7 @@
 
 #define numberActivations        (int) 2
 #define numberHiddenLayers       (int) 1
-#define numberHiddenNodes        (int) 3
+#define numberHiddenNodes        (int) 32
 #define MAX_ITERATIONS           (int) 100000
 #define LAMBDA                   (double) 0.3
 #define RANDOM_MIN               (double) -1.5
@@ -249,11 +249,11 @@ struct NeuralNetwork
    {
       cout << endl << "Echoing Configuration Parameters:" << endl;
       cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << 1 << endl;
-      cout << "Lambda Value: " << this->lambda << endl;
-      cout << "Error Threshold: " << this->errorThreshold << endl;
-      cout << "Maximum Number of Iterations: " << this->maxIterations << endl;
-      cout << "Random Value Minimum: " << this->randMin << endl;
-      cout << "Random Value Maximum: " << this->randMax << endl;
+      cout << "Lambda Value: " << lambda << endl;
+      cout << "Error Threshold: " << errorThreshold << endl;
+      cout << "Maximum Number of Iterations: " << maxIterations << endl;
+      cout << "Random Value Minimum: " << randMin << endl;
+      cout << "Random Value Maximum: " << randMax << endl;
       cout << "Randomizing Weights: " << (randomize ? "True" : "False") << endl;
       return;
    } //void echoConfigurationParameters()
@@ -321,9 +321,9 @@ struct NeuralNetwork
       train_data[3][1] = 1;
 
       train_answers[0] = 0; // Initializing Training Answers
-      train_answers[1] = 0;
-      train_answers[2] = 0;
-      train_answers[3] = 1;
+      train_answers[1] = 1;
+      train_answers[2] = 1;
+      train_answers[3] = 0;
 
       test_data[0][0] = 0; // Initializing Test Data
       test_data[0][1] = 0;
@@ -350,11 +350,11 @@ struct NeuralNetwork
       {
          cout << "Training the Network!" << endl;
          cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << 1 << endl;
-         cout << "Lambda Value: " << this->lambda << endl;
-         cout << "Error Threshold: " << this->errorThreshold << endl;
-         cout << "Maximum Number of Iterations: " << this->maxIterations << endl;
-         cout << "Random Value Minimum: " << this->randMin << endl;
-         cout << "Random Value Maximum: " << this->randMax << endl << endl;
+         cout << "Lambda Value: " << lambda << endl;
+         cout << "Error Threshold: " << errorThreshold << endl;
+         cout << "Maximum Number of Iterations: " << maxIterations << endl;
+         cout << "Random Value Minimum: " << randMin << endl;
+         cout << "Random Value Maximum: " << randMax << endl << endl;
       }
       return;
    }
