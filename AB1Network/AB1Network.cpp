@@ -30,7 +30,7 @@ using namespace std;
  */
 double sigmoid(double value)
 {
-   return 1/(1 + exp(-1 * value));
+   return 1/(1 + exp(-value));
 }
 
 /**
@@ -90,50 +90,7 @@ void printTime(double seconds)
 } // void printTime(double seconds)
 
 /**
- * This is the structure of the Neural Network, which contains the following variables:
- *    numInputActivations: Number of Activations
- *    numHiddenActivations: Number of Hidden Nodes in each Hidden Layer
- *    numHiddenLayers: Number of Hidden Layers
- *    lambda: Lambda Value (Learning Rate)
- *    errorThreshold: Error Threshold (Threshold for the error to reach before stopping training)
- *    maxIterations: Maximum number of iterations
- *    randMin: Minimum value of the random value assigned to weights
- *    randMax: Maximum value of the random value assigned to weights
- *    a: Activations
- *    h: Hidden Nodes
- *    F0: Output
- *    weights0J: Weights between the Input Layer and the Hidden Layers
- *    weightsJK: Weights between the Hidden Layers and the Output Layer
- *    trainData: Training Data (Inputs)
- *    trainAnswers: Training Answers (Expected Outputs)
- *    testData: Test Data (Inputs)
- *    numCases: Number of Test Cases
- *    training: Whether or not the network is in training mode (the alternative being running mode)
- *    I, J, K: Variables used for looping through the outputs, hidden layer, and activations respectively
- *    epoch: Used to iterate over all the test cases
- *    D: Used to iterate over all the data points in a train case
- *    thetaJ: Values used for calculating the Hidden Nodes - dot product of activations and corresponding weights
- *    thetaI: Values used for calculating the Output - dot product of hidden layers and corresponding weights
- *    dummyError: Dummy variable used for calculating the error
- *    lowerOmega: Value of T0 - F0
- *    lowerPsi: Value of lowerOmega * sigmoidPrime(thetaI)
- *    EPrimeJ0: Value of -1 * h[J] * lowerPsi -> indicates derivative of the error with respect to the weights0J
- *    deltaWj0: Value of -1 * lambda * EPrimeJ0 -> indicates the change in weights0J
- *    capitalOmega: Values of lowerPsi * weights0J[J]
- *    capitalPsi: Values of capitalOmega * sigmoidPrime(thetaJ)
- *    EPrimeJK: Value of -1 * a[K] * capitalPsi -> indicates derivative of the error with respect to the weightsJK
- *    deltaWJK: Value of -1 * lambda * EPrimeJK -> indicates the change in weightsJK
- *    trainingTime: Time taken for training the network
- *    runningTime: Time taken for running the network
- *    randomize: Whether or not the network is in randomize mode
- *    keepAliveFrequency: Frequency of keep alive mode
- *    dummyStart: Dummy variable used for the start of timing the training or running
- *    dummyEnd: Dummy variable used for the end of timing the training or running
- *    iterations: Number of iterations taken during training
- *    error_reached: Error value reached at the end of training or running
- *    reasonForEndOfTraining: Reason for the end of training
- *
- * And the following methods:
+ * This is the structure of the Neural Network, which contains the following methods:
  *   randomValue() - Outputs a random value based on the range as given in the configuration parameters
  *   setConfigurationParameters() - Sets the configuration parameters for the network based on the following parameters
  *   echoConfigurationParameters() - Outputs the configuration parameters for the network
@@ -153,52 +110,51 @@ void printTime(double seconds)
  */
 struct NeuralNetwork
 {
-   int numOutputActivations;
-   int numInputActivations;
-   int numHiddenActivations;
-   int numHiddenLayers;
-   double lambda;
-   float errorThreshold;
-   int maxIterations;
-   double randMin;
-   double randMax;
+   int numOutputActivations; // Number of Output Activations
+   int numInputActivations; // Number of Input Activations
+   int numHiddenActivations; // Number of Hidden Nodes in each Hidden Layer
+   int numHiddenLayers; // Number of Hidden Layers
+   double lambda; // Learning Rate - changes how much affect the derivative of the error has on the weights
+   float errorThreshold; // Threshold for the error to reach during training
+   int maxIterations; // Maximum number of iterations during training
+   double randMin; // Minimum value of the random value assigned to weights
+   double randMax; // Maximum value of the random value assigned to weights
 
-   double* a;
-   double* h;
-   double F0;
-   double* weights0J;
-   double** weightsJK;
-   double** trainData;
-   double* trainAnswers;
-   double** testData;
-   int numCases;
+   double* a; // Array for Input Activations
+   double* h; // Array for Hidden Activations
+   double F0; // Output Value
+   double* weights0J; // Weights between the Input Layer and the Hidden Layers
+   double** weightsJK; // Weights between the Hidden Layers and the Output Layer
+   double** trainData; // Training Data (Inputs)
+   double* trainAnswers; // Training Answers (Expected Outputs)
+   double** testData; // Test Data (Inputs)
+   int numCases; // Number of Test Cases
 
-   bool training;
-   int I, J, K;
-   int D;
-   int epoch;
-   double* thetaJ;
-   double* thetaI;
+   bool training; // Whether or not the network is in training mode (the alternative being running mode)
+   int I, J, K; // Variables used for looping through the outputs, hidden layer, and activations respectively
+   int D; // Used to iterate over all the data points in a train case
+   int epoch; // Used to iterate over all the test cases
+   double* thetaJ; // Values used for calculating the hidden nodes - dot product of activations and  weights
+   double* thetaI; // Values used for calculating the Output - dot product of hidden layers and corresponding weights
 
-   float dummyError;
-   double lowerOmega;
-   double lowerPsi;
-   double EPrimeJ0;
-   double* deltaWj0;
-   double* capitalOmega;
-   double* capitalPsi;
-   double EPrimeJK;
-   double deltaWJK;
+   float dummyError; // Dummy variable used for calculating the error
+   double lowerOmega; // Value of T0 - F0
+   double lowerPsi; // Value of lowerOmega * sigmoidPrime(thetaI)
+   double EPrimeJ0; // Value of -1 * h[J] * lowerPsi -> indicates derivative of the error with respect to the weights0J
+   double* deltaWj0; // Value of -1 * lambda * EPrimeJ0 -> indicates the change in weights0J
+   double* capitalOmega; // Values of lowerPsi * weights0J[J]
+   double* capitalPsi; // Values of capitalOmega * sigmoidPrime(thetaJ)
+   double EPrimeJK; // Value of -1 * a[K] * capitalPsi -> indicates derivative of the error with respect to weightsJK
+   double deltaWJK; // Value of -1 * lambda * EPrimeJK -> indicates the change in weightsJK
 
-   double trainingTime;
-   double runningTime;
-   int keepAliveFrequency;
-   bool randomize;
-   time_t dummyStart;
-   time_t dummyEnd;
-   int iterations;
-   float error_reached;
-   string reasonForEndOfTraining;
+   double trainingTime; // Time taken for training the network
+   double runningTime; // Time taken for running the network
+   bool randomize; // Whether or not the network is in randomize mode
+   time_t dummyStart; // Dummy variable used for the start of timing the training or running
+   time_t dummyEnd; // Dummy variable used for the end of timing the training or running
+   int iterations; // Number of iterations taken during training
+   float error_reached; // Error value reached at the end of training or running
+   string reasonForEndOfTraining; // Reason for ending training
 
    /**
     * Outputs a random value based on the range as given in the configuration parameters
@@ -222,7 +178,7 @@ struct NeuralNetwork
     */
    void setConfigurationParameters(int numAct, int numHidLayer, int numHidInEachLayer, double lamb,
                                    float errorThres, int maxIter, double min, double max,
-                                   bool train, bool randomize, int keepAliveFrequency)
+                                   bool train, bool randomize)
    {
       this->numOutputActivations = 1;
       this->numInputActivations = numAct;
@@ -238,7 +194,6 @@ struct NeuralNetwork
       this->training = train;
       this->randomize = randomize;
       this->numCases = 4;
-      this->keepAliveFrequency = keepAliveFrequency;
       return;
    } // void setConfigurationParameters(int numAct, int numHidLayer ...
 
@@ -517,7 +472,7 @@ int main(int argc, char *argv[])
    NeuralNetwork network; // Creating and Configurating the Network based on pre-determined constants and designs
    network.setConfigurationParameters(numberActivations, numberHiddenLayers,
       numberHiddenNodes, LAMBDA, ERROR_THRESHOLD, MAX_ITERATIONS,
-      RANDOM_MIN, RANDOM_MAX, false, false, 1000);
+      RANDOM_MIN, RANDOM_MAX, true, true);
    network.echoConfigurationParameters();
    cout << endl;
 
