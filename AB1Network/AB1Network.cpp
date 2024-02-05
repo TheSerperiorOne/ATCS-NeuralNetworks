@@ -8,21 +8,44 @@
 #include <iostream>
 #include <time.h>
 
+#define activationFunction(value)       sigmoid(value)
+#define derivativeFunction(value)       sigmoidPrime(value)
+
 #define numberActivations        (int) 2
 #define numberHiddenLayers       (int) 1
-#define numberHiddenNodes        (int) 32
+#define numberHiddenNodes        (int) 2
 #define MAX_ITERATIONS           (int) 100000
 #define LAMBDA                   (double) 0.3
 #define RANDOM_MIN               (double) -1.5
 #define RANDOM_MAX               (double) 1.5
-#define ERROR_THRESHOLD          (double) (2.0 * pow(10, -4))
+#define ERROR_THRESHOLD          (double) (2.0e-4)
 #define MILLISECONDS_IN_SECOND   (double) 1000.0
 #define SECONDS_IN_MINUTE        (double) 60.0
 #define MINUTES_IN_HOUR          (double) 60.0
 #define HOURS_IN_DAY             (double) 24.0
 #define DAYS_IN_WEEK             (double) 7.0
+#define TRAIN                    (bool) true
+#define RANDOMIZE                (bool) true
 
 using namespace std;
+
+/**
+ * Implements the linear function, which is defined by
+ *    linear(x) = x
+ */
+double linear(double value)
+{
+   return value;
+}
+
+/**
+ * Implements the derivative linear function, which is defined by
+ *    linearPrime(x) = 1.0
+ */
+double linearPrime(double value)
+{
+   return 1.0;
+}
 
 /**
  * This implements the sigmoid function, which is defined by
@@ -175,6 +198,7 @@ struct NeuralNetwork
     *   min: Minimum value of the random value assigned to weights
     *   max: Maximum value of the random value assigned to weights
     *   train: Whether or not the network is in training mode (the alternative being running mode)
+    *   randomize: Whether or not the network is in randomize mode
     */
    void setConfigurationParameters(int numAct, int numHidLayer, int numHidInEachLayer, double lamb,
                                    float errorThres, int maxIter, double min, double max,
@@ -257,8 +281,8 @@ struct NeuralNetwork
       }
       else // Manually Overriding Values
       {
-         weights0J[0] = 0.103;
-         weights0J[1] = 0.23;
+         weights0J[0] = 1;
+         weights0J[1] = 1;
          for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K) weightsJK[J][K] = 1;
       }
 
@@ -336,7 +360,7 @@ struct NeuralNetwork
             dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
 
             lowerOmega = trainAnswers[D] - F0;
-            lowerPsi = lowerOmega * sigmoidPrime(thetaI[0]);
+            lowerPsi = lowerOmega * derivativeFunction(thetaI[0]);
             for (J = 0; J < numHiddenActivations; ++J)
             {
                EPrimeJ0 = -1 * h[J] * lowerPsi;
@@ -346,7 +370,7 @@ struct NeuralNetwork
             for (J = 0; J < numHiddenActivations; ++J)
             {
                capitalOmega[J] = lowerPsi * weights0J[J];
-               capitalPsi[J] = capitalOmega[J] * sigmoidPrime(thetaJ[J]);
+               capitalPsi[J] = capitalOmega[J] * derivativeFunction(thetaJ[J]);
 
                for (K = 0; K < numInputActivations; ++K)
                {
@@ -356,10 +380,10 @@ struct NeuralNetwork
                } // for (K = 0; K < numInputActivations; ++K)
 
                weights0J[J] += deltaWj0[J];
-               dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
-               error_reached += dummyError;
             } // for (J = 0; J < numHiddenActivations; ++J)
 
+            dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
+            error_reached += dummyError;
             F0 = Run(trainData[D]);
          } // for (D = 0; D ...
 
@@ -391,7 +415,7 @@ struct NeuralNetwork
          {
             thetaJ[J] += a[K] * weightsJK[J][K];
          } // for (K = 0; K < numInputActivations; ++K)
-         h[J] = sigmoid(thetaJ[J]);
+         h[J] = activationFunction(thetaJ[J]);
       } // for (J = 0; J < numHiddenActivations; ++J)
 
       thetaI[0] = 0;
@@ -399,7 +423,7 @@ struct NeuralNetwork
       {
          thetaI[0] += h[J] * weights0J[J];
       } // for (J = 0; J < numHiddenActivations; ++J)
-      F0 = sigmoid(thetaI[0]);
+      F0 = activationFunction(thetaI[0]);
 
       time(&dummyEnd);
       runningTime = double(dummyEnd - dummyStart);
@@ -451,10 +475,11 @@ void testingData(NeuralNetwork* network)
  */
 int main(int argc, char *argv[])
 {
+   srand(time(NULL));
    NeuralNetwork network; // Creating and Configurating the Network based on pre-determined constants and designs
    network.setConfigurationParameters(numberActivations, numberHiddenLayers,
       numberHiddenNodes, LAMBDA, ERROR_THRESHOLD, MAX_ITERATIONS,
-      RANDOM_MIN, RANDOM_MAX, true, true);
+      RANDOM_MIN, RANDOM_MAX, TRAIN, RANDOMIZE);
    network.echoConfigurationParameters();
    cout << endl;
 
