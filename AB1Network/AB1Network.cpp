@@ -331,25 +331,7 @@ struct NeuralNetwork
          error_reached = 0;
          for (D = 0; D < 4; ++D)
          {
-            a = trainData[D];
-
-            thetaJ[J] = 0;
-            for (J = 0; J < numHiddenActivations; ++J)
-            {
-               thetaJ[J] = 0;
-               for (K = 0; K < numInputActivations; ++K)
-               {
-                  thetaJ[J] += a[K] * weightsJK[J][K];
-               } // for (K = 0; K < numInputActivations; ++K)
-               h[J] = sigmoid(thetaJ[J]);
-            } // for (J = 0; J < numHiddenActivations; ++J)
-
-            thetaI[0] = 0;
-            for (J = 0; J < numHiddenActivations; ++J)
-            {
-               thetaI[0] += h[J] * weights0J[J];
-            } // for (J = 0; J < numHiddenActivations; ++J)
-            F0 = sigmoid(thetaI[0]);
+            F0 = Run(trainData[D]);
 
             dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
             error_reached += dummyError;
