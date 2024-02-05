@@ -363,8 +363,8 @@ struct NeuralNetwork
             lowerPsi = lowerOmega * derivativeFunction(thetaI[0]);
             for (J = 0; J < numHiddenActivations; ++J)
             {
-               EPrimeJ0 = -1 * h[J] * lowerPsi;
-               deltaWj0[J] = -1 * lambda * EPrimeJ0;
+               EPrimeJ0 = -1.0 * h[J] * lowerPsi;
+               deltaWj0[J] = -1.0 * lambda * EPrimeJ0;
             } // for (J = 0; J < numHiddenActivations; ++J)
 
             for (J = 0; J < numHiddenActivations; ++J)
@@ -374,8 +374,8 @@ struct NeuralNetwork
 
                for (K = 0; K < numInputActivations; ++K)
                {
-                  EPrimeJK = -1 * a[K] * capitalPsi[J];
-                  deltaWJK = -1 * lambda * EPrimeJK;
+                  EPrimeJK = -1.0 * a[K] * capitalPsi[J];
+                  deltaWJK = -1.0 * lambda * EPrimeJK;
                   weightsJK[J][K] += deltaWJK;
                } // for (K = 0; K < numInputActivations; ++K)
 
