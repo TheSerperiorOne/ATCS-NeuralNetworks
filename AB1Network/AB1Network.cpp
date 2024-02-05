@@ -332,7 +332,6 @@ struct NeuralNetwork
       trainAnswers[3] = 0;
 
       testData = trainData;
-
       cout << "Populated Arrays!" << endl;
       return;
    } //void populateArrays()
@@ -354,11 +353,6 @@ struct NeuralNetwork
          cout << "Maximum Number of Iterations: " << maxIterations << endl;
          cout << "Random Value Minimum: " << randMin << endl;
          cout << "Random Value Maximum: " << randMax << endl;
-         cout << "Truth Table" << endl;
-         for (int index = 0; index < numCases; ++index)
-         {
-            cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << endl;
-         }
          cout << endl;
       }
       return;
@@ -371,7 +365,6 @@ struct NeuralNetwork
    void Train()
    {
       time(&dummyStart);
-
       checkNetwork();
 
       error_reached = INT_MAX;
@@ -431,13 +424,6 @@ struct NeuralNetwork
          } // for (D = 0; D ...
 
          error_reached /= numCases;
-
-         if (epoch % keepAliveFrequency == 0) // TODO Destroy this
-         {
-            cout << "Iteration Number: " << epoch << ", Test Case: " << a[0] << " & " << a[1] <<
-               ", Expected Output: " << trainAnswers[D] << ", Output: " << F0 << ", Error: " << dummyError << endl << endl;
-         } // if (epoch % keepAliveFrequency == 0 && keepAlive)
-
          ++epoch;
       } // while (epoch < maxIterations && error_reached > errorThreshold)
 
@@ -457,7 +443,6 @@ struct NeuralNetwork
    double Run(double *inputValues)
    {
       training = false;
-      checkNetwork();
       a = inputValues;
 
       time(&dummyStart);
@@ -497,7 +482,13 @@ struct NeuralNetwork
          cout << "Training Time Taken: ";
          printTime(trainingTime);
          cout << "Error Reached: " << error_reached << endl;
-         cout << "Iterations reached: " << iterations << endl << endl;
+         cout << "Iterations reached: " << iterations << endl;
+         cout << "Truth Table" << endl;
+         for (int index = 0; index < numCases; ++index)
+         {
+            cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << " -> " << Run(trainData[index]) << endl;
+         } // for (int index = 0...
+         cout << endl;
       } // if (training)
       return;
    } // reportResults()
@@ -511,6 +502,7 @@ void testingData(NeuralNetwork* network)
 {
    for (int index = 0; index < network->numCases; ++index)
    {
+      network->checkNetwork();
       cout << "Running the Network with Test Data: " << network->testData[index][0] << " & " << network->testData[index][1] << endl;
       cout << network->Run(network->testData[index]) << endl << endl;
    } // for (int numOutputActivations = 0; numOutputActivations < 4; ++numOutputActivations)
@@ -525,7 +517,7 @@ int main(int argc, char *argv[])
    NeuralNetwork network; // Creating and Configurating the Network based on pre-determined constants and designs
    network.setConfigurationParameters(numberActivations, numberHiddenLayers,
       numberHiddenNodes, LAMBDA, ERROR_THRESHOLD, MAX_ITERATIONS,
-      RANDOM_MIN, RANDOM_MAX, true, true, 1000);
+      RANDOM_MIN, RANDOM_MAX, false, false, 1000);
    network.echoConfigurationParameters();
    cout << endl;
 
@@ -533,8 +525,11 @@ int main(int argc, char *argv[])
    network.populateArrays(); // Populating Arrays in Network
    cout << endl;
 
-   network.Train(); // Training the Network using predetermined training data
-   network.reportResults();
+   if (network.training) // Training the Network using predetermined training data
+   {
+      network.Train();
+      network.reportResults();
+   }
 
    network.training = false; // Running the Network using test data
    testingData(&network);
