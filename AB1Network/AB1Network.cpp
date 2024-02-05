@@ -184,7 +184,7 @@ struct NeuralNetwork
    double lowerOmega;
    double lowerPsi;
    double EPrimeJ0;
-   double deltaWj0;
+   double* deltaWj0;
    double* capitalOmega;
    double* capitalPsi;
    double EPrimeJK;
@@ -276,6 +276,8 @@ struct NeuralNetwork
       thetaI = new double[numOutputActivations];
       thetaJ = new double[numHiddenActivations];
 
+      deltaWj0 = new double[numHiddenActivations];
+
       trainData = new double*[numCases];
       for (int index = 0; index < numCases; ++index) trainData[index] = new double[numInputActivations];
       trainAnswers = new double[numCases];
@@ -329,14 +331,7 @@ struct NeuralNetwork
       trainAnswers[2] = 1;
       trainAnswers[3] = 0;
 
-      testData[0][0] = 0; // Initializing Test Data
-      testData[0][1] = 0;
-      testData[1][0] = 0;
-      testData[1][1] = 1;
-      testData[2][0] = 1;
-      testData[2][1] = 0;
-      testData[3][0] = 1;
-      testData[3][1] = 1;
+      testData = trainData;
 
       cout << "Populated Arrays!" << endl;
       return;
@@ -358,7 +353,13 @@ struct NeuralNetwork
          cout << "Error Threshold: " << errorThreshold << endl;
          cout << "Maximum Number of Iterations: " << maxIterations << endl;
          cout << "Random Value Minimum: " << randMin << endl;
-         cout << "Random Value Maximum: " << randMax << endl << endl;
+         cout << "Random Value Maximum: " << randMax << endl;
+         cout << "Truth Table" << endl;
+         for (int index = 0; index < numCases; ++index)
+         {
+            cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << endl;
+         }
+         cout << endl;
       }
       return;
    }
@@ -410,13 +411,12 @@ struct NeuralNetwork
             for (J = 0; J < numHiddenActivations; ++J)
             {
                EPrimeJ0 = -1 * h[J] * lowerPsi;
-               deltaWj0 = -1 * lambda * EPrimeJ0;
-               weights0J[J] += deltaWj0;
+               deltaWj0[J] = -1 * lambda * EPrimeJ0;
             } // for (J = 0; J < numHiddenActivations; ++J)
 
             for (J = 0; J < numHiddenActivations; ++J)
             {
-               capitalOmega[J] = lowerPsi * weights0J[J];
+               capitalOmega[J] = lowerPsi * weights0J[J]; // TODO Check this (weights is different)
                capitalPsi[J] = capitalOmega[J] * sigmoidPrime(thetaJ[J]);
 
                for (K = 0; K < numInputActivations; ++K)
@@ -425,6 +425,8 @@ struct NeuralNetwork
                   deltaWJK = -1 * lambda * EPrimeJK;
                   weightsJK[J][K] += deltaWJK;
                } // for (K = 0; K < numInputActivations; ++K)
+
+               weights0J[J] += deltaWj0[J];
             } // for (J = 0; J < numHiddenActivations; ++J)
          } // for (D = 0; D ...
 

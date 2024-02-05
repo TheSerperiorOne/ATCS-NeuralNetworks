@@ -1,3 +1,0 @@
-"C:\Users\Varun Thvar\AppData\Local\Programs\CLion Nova\bin\cmake\win\x64\bin\cmake.exe" -E rm -f CMakeFiles\ATCS_Neural_Networks.dir/objects.a
-"C:\Users\Varun Thvar\AppData\Local\Programs\CLion Nova\bin\mingw\bin\ar.exe" qc CMakeFiles\ATCS_Neural_Networks.dir/objects.a @CMakeFiles\ATCS_Neural_Networks.dir\objects1.rsp
-"C:\Users\Varun Thvar\AppData\Local\Programs\CLion Nova\bin\mingw\bin\g++.exe" -g -Wl,--whole-archive CMakeFiles\ATCS_Neural_Networks.dir/objects.a -Wl,--no-whole-archive -o ATCS_Neural_Networks.exe -Wl,--out-implib,libATCS_Neural_Networks.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\ATCS_Neural_Networks.dir\linkLibs.rsp
