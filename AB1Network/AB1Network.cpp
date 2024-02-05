@@ -416,7 +416,7 @@ struct NeuralNetwork
 
             for (J = 0; J < numHiddenActivations; ++J)
             {
-               capitalOmega[J] = lowerPsi * weights0J[J]; // TODO Check this (weights is different)
+               capitalOmega[J] = lowerPsi * weights0J[J];
                capitalPsi[J] = capitalOmega[J] * sigmoidPrime(thetaJ[J]);
 
                for (K = 0; K < numInputActivations; ++K)
