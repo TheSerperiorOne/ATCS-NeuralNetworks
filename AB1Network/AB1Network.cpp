@@ -334,7 +334,6 @@ struct NeuralNetwork
             F0 = Run(trainData[D]);
 
             dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
-            error_reached += dummyError;
 
             lowerOmega = trainAnswers[D] - F0;
             lowerPsi = lowerOmega * sigmoidPrime(thetaI[0]);
@@ -357,7 +356,11 @@ struct NeuralNetwork
                } // for (K = 0; K < numInputActivations; ++K)
 
                weights0J[J] += deltaWj0[J];
+               dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
+               error_reached += dummyError;
             } // for (J = 0; J < numHiddenActivations; ++J)
+
+            F0 = Run(trainData[D]);
          } // for (D = 0; D ...
 
          error_reached /= numCases;
@@ -379,11 +382,8 @@ struct NeuralNetwork
     */
    double Run(double *inputValues)
    {
-      training = false;
-      a = inputValues;
-
       time(&dummyStart);
-
+      a = inputValues;
       for (J = 0; J < numHiddenActivations; ++J)
       {
          thetaJ[J] = 0;
