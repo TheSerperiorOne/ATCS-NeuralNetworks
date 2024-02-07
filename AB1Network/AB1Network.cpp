@@ -15,7 +15,7 @@
 
 #define NUMBER_ACTIVATIONS       ((int) 2)
 #define NUMBER_HIDDEN_LAYERS     ((int) 1)
-#define NUMBER_HIDDEN_NODES      ((int) 2)
+#define NUMBER_HIDDEN_NODES      ((int) 1)
 #define MAX_ITERATIONS           ((int) 100000)
 #define LAMBDA                   ((double) 0.3)
 #define RANDOM_MIN               ((double) -1.5)
@@ -317,7 +317,7 @@ struct NeuralNetwork
          trainAnswers[0] = 0.0; // Initializing Training Answers
          trainAnswers[1] = 1.0;
          trainAnswers[2] = 1.0;
-         trainAnswers[3] = 1.0;
+         trainAnswers[3] = 0.0;
 
          testData = trainData;
       } // if (training)
@@ -386,11 +386,11 @@ struct NeuralNetwork
    double run(double *inputValues)
    {
       time_t dummyStart, dummyEnd;
-      time(&dummyStart);
-
       int I, J, K;
       double thetaJ;
       double thetaI;
+
+      time(&dummyStart);
 
       a = inputValues;
 
@@ -454,11 +454,12 @@ struct NeuralNetwork
    void train()
    {
       time_t dummyStart, dummyEnd;
-      time(&dummyStart);
-      checkNetwork();
 
       int I, J, K, D, epoch;
       double dummyError, lowerOmega, lowerPsi, EPrimeJ0, EPrimeJK, deltaWJK;
+
+      time(&dummyStart);
+      checkNetwork();
 
       error_reached = INT_MAX;
       dummyError = 0.0;
