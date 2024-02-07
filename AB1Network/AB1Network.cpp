@@ -140,7 +140,7 @@ struct NeuralNetwork
    int numHiddenActivations;     // Number of Hidden Nodes in each Hidden Layer
    int numHiddenLayers;          // Number of Hidden Layers
    double lambda;                // Learning Rate - changes how much affect the derivative of the error has on the weights
-   double errorThreshold;         // Threshold for the error to reach during training
+   double errorThreshold;        // Threshold for the error to reach during training
    int maxIterations;            // Maximum number of iterations during training
    double randMin;               // Minimum value of the random value assigned to weights
    double randMax;               // Maximum value of the random value assigned to weights
@@ -178,7 +178,7 @@ struct NeuralNetwork
    time_t dummyStart;            // Dummy variable used for the start of timing the training or running
    time_t dummyEnd;              // Dummy variable used for the end of timing the training or running
    int iterations;               // Number of iterations taken during training
-   double error_reached;          // Error value reached at the end of training or running
+   double error_reached;         // Error value reached at the end of training or running
    string reasonEndTraining;     // Reason for ending training
 
    /**
@@ -334,7 +334,7 @@ struct NeuralNetwork
          trainAnswers[0] = 0; // Initializing Training Answers
          trainAnswers[1] = 1;
          trainAnswers[2] = 1;
-         trainAnswers[3] = 0;
+         trainAnswers[3] = 1;
 
          testData = trainData;
       } // if (training)
