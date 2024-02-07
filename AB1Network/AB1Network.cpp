@@ -153,7 +153,6 @@ struct NeuralNetwork
    double** weightsJK;           // Weights between the Hidden Layers and the Output Layer
    double** trainData;           // Training Data (Inputs)
    double* trainAnswers;         // Training Answers (Expected Outputs)
-   int numCases;                 // Number of Test Cases
    double* thetaJ;               // Values used for calculating the hidden nodes - dot product of activations and  weights
    double* thetaI;               // Values used for calculating the Output - dot product of hidden layers and corresponding weights
    double** testData;            // Test Data (Inputs)
@@ -161,6 +160,7 @@ struct NeuralNetwork
    double* capitalOmega;         // Values of lowerPsi * weights0J[J]
    double* capitalPsi;           // Values of capitalOmega * sigmoidPrime(thetaJ)
 
+   int numCases;                 // Number of Test Cases
    double trainingTime;          // Time taken for training the network
    double runningTime;           // Time taken for running the network
    bool randomize;               // Whether or not the network is in randomize mode
@@ -224,6 +224,7 @@ struct NeuralNetwork
    void allocateArrayMemory()
    {
       int I, J, K, D;
+
       if (training)
       {
          a = new double[numInputActivations]; // Initializing input and hidden activations
@@ -261,6 +262,7 @@ struct NeuralNetwork
 
          testData = new double*[numCases]; // Initializing test data
          for (D = 0; D < numCases; ++D) testData[D] = new double[numInputActivations];
+
       } // if (!training)
       cout << "Allocated Memory!" << endl;
       return;
@@ -277,6 +279,7 @@ struct NeuralNetwork
    void populateArrays()
    {
       int I, J, K;
+
       if (training)
       {
          if (randomize) // Randomizing Weights
@@ -327,6 +330,7 @@ struct NeuralNetwork
             for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
                weightsJK[J][K] = randomValue();
          } // if (randomize)
+
          else // Manually Overriding Values
          {
             weights0J[0] = 0.103;
@@ -385,9 +389,10 @@ struct NeuralNetwork
       time(&dummyStart);
 
       int I, J, K;
-      a = inputValues;
       double thetaJ;
       double thetaI;
+
+      a = inputValues;
 
       for (J = 0; J < numHiddenActivations; ++J)
       {
@@ -404,6 +409,7 @@ struct NeuralNetwork
       {
          thetaI += h[J] * weights0J[J];
       } // for (J = 0; J < numHiddenActivations; ++J)
+
       F0 = activationFunction(thetaI);
 
       time(&dummyEnd);
@@ -419,6 +425,7 @@ struct NeuralNetwork
    {
       int I, J, K;
       a = inputValues;
+
       for (J = 0; J < numHiddenActivations; ++J)
       {
          thetaJ[J] = 0.0;
@@ -434,6 +441,7 @@ struct NeuralNetwork
       {
          thetaI[0] += h[J] * weights0J[J];
       } // for (J = 0; J < numHiddenActivations; ++J)
+
       F0 = activationFunction(thetaI[0]);
       return F0;
    } // double runTrain(double *inputValues)
@@ -521,10 +529,12 @@ struct NeuralNetwork
          cout << "Error Reached: " << error_reached << endl;
          cout << "Iterations reached: " << iterations << endl << endl;
          cout << "Truth Table and Expected Outputs" << endl;
+
          for (int index = 0; index < numCases; ++index)
          {
             cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << " -> " << run(trainData[index]) << endl;
          } // for (int index = 0...
+
          cout << endl;
       } // if (training)
       return;
