@@ -3,7 +3,7 @@
  * Date of Creation: 26 January 2023
  * Description: This is an implementation of a simple trainable A-B-1 Network
  *              designed for simple boolean algebra problems. This network incorporates the gradient descent algorithm
- *              to minimize the error by adjusting the weights derivative
+ *              to minimize the error by adjusting the weights by the derivative of the Error function.
  */
 
 #include <cmath>
@@ -15,7 +15,7 @@
 
 #define NUMBER_ACTIVATIONS       ((int) 2)
 #define NUMBER_HIDDEN_LAYERS     ((int) 1)
-#define NUMBER_HIDDEN_NODES      ((int) 32)
+#define NUMBER_HIDDEN_NODES      ((int) 2)
 #define MAX_ITERATIONS           ((int) 100000)
 #define LAMBDA                   ((double) 0.3)
 #define RANDOM_MIN               ((double) -1.5)
@@ -38,7 +38,7 @@ using namespace std;
 double linear(double value)
 {
    return value;
-}
+} // double linear(double value)
 
 /**
  * Implements the derivative linear function, which is defined by
@@ -47,7 +47,7 @@ double linear(double value)
 double linearPrime(double value)
 {
    return 1.0;
-}
+} // double linearPrime(double value)
 
 /**
  * This implements the sigmoid function, which is defined by
@@ -56,7 +56,7 @@ double linearPrime(double value)
 double sigmoid(double value)
 {
    return 1.0/(1.0 + exp(-value));
-}
+} // double sigmoid(double value)
 
 /**
  * This implements the derivative of the sigmoid function, which is defined by
@@ -67,7 +67,7 @@ double sigmoidPrime(double value)
 {
     double sig = sigmoid(value);
     return sig * (1.0 - sig);
-}
+} // double sigmoidPrime(double value)
 
 /**
  * Accept a value representing seconds elapsed and print out a decimal value in easier to digest units
@@ -140,7 +140,7 @@ struct NeuralNetwork
    int numHiddenActivations;     // Number of Hidden Nodes in each Hidden Layer
    int numHiddenLayers;          // Number of Hidden Layers
    double lambda;                // Learning Rate - changes how much affect the derivative of the error has on the weights
-   float errorThreshold;         // Threshold for the error to reach during training
+   double errorThreshold;         // Threshold for the error to reach during training
    int maxIterations;            // Maximum number of iterations during training
    double randMin;               // Minimum value of the random value assigned to weights
    double randMax;               // Maximum value of the random value assigned to weights
@@ -178,7 +178,7 @@ struct NeuralNetwork
    time_t dummyStart;            // Dummy variable used for the start of timing the training or running
    time_t dummyEnd;              // Dummy variable used for the end of timing the training or running
    int iterations;               // Number of iterations taken during training
-   float error_reached;          // Error value reached at the end of training or running
+   double error_reached;          // Error value reached at the end of training or running
    string reasonEndTraining;     // Reason for ending training
 
    /**
@@ -204,21 +204,21 @@ struct NeuralNetwork
     */
    void setConfigurationParameters()
    {
-      this->numOutputActivations = 1;
-      this->numCases = 4;
+      numOutputActivations = 1;
+      numCases = 4;
 
-      this->numInputActivations = NUMBER_ACTIVATIONS;
-      this->numHiddenLayers = NUMBER_HIDDEN_LAYERS;
-      this->numHiddenActivations = NUMBER_HIDDEN_NODES;
+      numInputActivations = NUMBER_ACTIVATIONS;
+      numHiddenLayers = NUMBER_HIDDEN_LAYERS;
+      numHiddenActivations = NUMBER_HIDDEN_NODES;
 
-      this->lambda = LAMBDA;
-      this->errorThreshold = ERROR_THRESHOLD;
-      this->maxIterations = MAX_ITERATIONS;
-      this->randMin = RANDOM_MIN;
-      this->randMax = RANDOM_MAX;
+      lambda = LAMBDA;
+      errorThreshold = ERROR_THRESHOLD;
+      maxIterations = MAX_ITERATIONS;
+      randMin = RANDOM_MIN;
+      randMax = RANDOM_MAX;
 
-      this->training = TRAIN;
-      this->randomize = RANDOMIZE;
+      training = TRAIN;
+      randomize = RANDOMIZE;
 
       return;
    } // void setConfigurationParameters(int numAct, int numHidLayer ...
@@ -531,8 +531,8 @@ struct NeuralNetwork
          cout << "Training Time Taken: ";
          printTime(trainingTime);
          cout << "Error Reached: " << error_reached << endl;
-         cout << "Iterations reached: " << iterations << endl;
-         cout << "Truth Table" << endl;
+         cout << "Iterations reached: " << iterations << endl << endl;
+         cout << "Truth Table and Expected Outputs" << endl;
          for (int index = 0; index < numCases; ++index)
          {
             cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << " -> " << run(trainData[index]) << endl;
@@ -564,6 +564,7 @@ void testingData(NeuralNetwork* network)
 int main(int argc, char *argv[])
 {
    srand(time(NULL));
+   rand();
 
    NeuralNetwork network; // Creating and Configurating the Network based on pre-determined constants and designs
    network.setConfigurationParameters();
@@ -578,7 +579,7 @@ int main(int argc, char *argv[])
    {
       network.train();
       network.reportResults();
-   }
+   } // if (network.training)
 
    network.training = false; // Running the Network using test data
    testingData(&network);
