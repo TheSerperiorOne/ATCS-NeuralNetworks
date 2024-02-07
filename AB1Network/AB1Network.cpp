@@ -429,7 +429,7 @@ struct NeuralNetwork
    } // double run(double *inputValues)
 
    /**
-    * Runs the network DURING TRAINING using predetermined test data. Each node is calculated using
+    * Runs the network ONLY DURING TRAINING using predetermined test data. Each node is calculated using
     *    the sigmoid function applied onto a dot product of the weights and the activations.
     */
    double runTrain(double *inputValues)
@@ -475,7 +475,7 @@ struct NeuralNetwork
          {
             runTrain(trainData[D]);
 
-            dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
+            dummyError = 0.5 * (trainAnswers[D] - F0) * (trainAnswers[D] - F0);
 
             lowerOmega = trainAnswers[D] - F0;
             lowerPsi = lowerOmega * derivativeFunction(thetaI[0]);
@@ -502,7 +502,7 @@ struct NeuralNetwork
             } // for (J = 0; J < numHiddenActivations; ++J)
 
             runTrain(trainData[D]);
-            dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
+            dummyError = 0.5 * (trainAnswers[D] - F0) * (trainAnswers[D] - F0);
             error_reached += dummyError;
          } // for (D = 0; D ...
 
