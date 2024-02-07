@@ -124,10 +124,10 @@ void printTime(double seconds)
  *          it manually overrides
  *   checkNetwork() - Outputs the Network Type, Lambda Value, Error Threshold, Maximum Number of Iterations,
  *          and the Random Number Range
- *   Train() - Trains the network using predetermined training data. The training is done using the gradient
+ *   train() - Trains the network using predetermined training data. The training is done using the gradient
  *          descent algorithm, which is used to minimize the error by adjusting the weights derivative of the error
  *          with respect to the weights
- *   Run() - Runs the network using predetermined test data. Each node is calculated using the sigmoid function
+ *   run() - Runs the network using predetermined test data. Each node is calculated using the sigmoid function
  *          applied onto a dot product of the weights and the activations
  *   reportResults() - Reports the results of the training or running of the network, depending on the mode
  *          the network is in training mode or not
@@ -248,36 +248,39 @@ struct NeuralNetwork
    {
       if (training)
       {
-         a = new double[numInputActivations];
+         a = new double[numInputActivations]; // Initializing input and hidden activations
          h = new double[numHiddenActivations];
 
-         weights0J = new double[numHiddenActivations];
+         weights0J = new double[numHiddenActivations]; // Initializing weights
          weightsJK = new double*[numHiddenActivations];
          for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
 
-         capitalOmega = new double[numHiddenActivations];
+         capitalOmega = new double[numHiddenActivations]; // Initializing capital Omega and Psi
          capitalPsi = new double[numHiddenActivations];
 
-         thetaI = new double[numOutputActivations];
+         thetaI = new double[numOutputActivations]; // Initializing Thetas
          thetaJ = new double[numHiddenActivations];
 
-         deltaWj0 = new double[numHiddenActivations];
+         deltaWj0 = new double[numHiddenActivations]; // Initializing delta weights
 
-         trainData = new double*[numCases];
+         trainData = new double*[numCases]; // Initializing Training Data
          for (int index = 0; index < numCases; ++index) trainData[index] = new double[numInputActivations];
          trainAnswers = new double[numCases];
-         testData = new double*[numCases];
+
+         testData = new double*[numCases]; // Initializing Test Data
          for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
+
       } // if (training)
       if (!training)
       {
-         a = new double[numInputActivations];
+         a = new double[numInputActivations]; // Initializing input and hidden activations
          h = new double[numHiddenActivations];
 
-         weights0J = new double[numHiddenActivations];
+         weights0J = new double[numHiddenActivations]; // Initializing weights
          weightsJK = new double*[numHiddenActivations];
          for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
-         testData = new double*[numCases];
+
+         testData = new double*[numCases]; // Initializing test data
          for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
       } // if (!training)
       cout << "Allocated Memory!" << endl;
@@ -288,9 +291,9 @@ struct NeuralNetwork
     * IF RUNNING: Populates the weights with random values, unless the network is a 2-2-1 network, in which
     *             it manually overrides the values. All other arrays (inputs, hiddens, output) are auto set to 0.0.
     *
-      * IF TRAINING: Populates the weights with random values, unless the network is a 2-2-1 network, in which it
-      *              manually overrides the values. All other arrays (inputs, hiddens, output) thetas) are auto set to
-      *              0.0.
+    * IF TRAINING: Populates the weights with random values, unless the network is a 2-2-1 network, in which it
+    *              manually overrides the values. All other arrays (inputs, hiddens, output) thetas) are auto set to
+    *              0.0.
     */
    void populateArrays()
    {
@@ -332,6 +335,7 @@ struct NeuralNetwork
          trainAnswers[1] = 1;
          trainAnswers[2] = 1;
          trainAnswers[3] = 0;
+
          testData = trainData;
       } // if (training)
 
@@ -391,11 +395,71 @@ struct NeuralNetwork
    } //void checkNetwork()
 
    /**
+   * Runs the network using predetermined test data. Used for solely running purposes.
+   *     Each node is calculated using the sigmoid function applied onto a dot product
+   *     of the weights and the activations.
+    */
+   double run(double *inputValues)
+   {
+      time(&dummyStart);
+      a = inputValues;
+      double thetaJ;
+      double thetaI;
+
+      for (J = 0; J < numHiddenActivations; ++J)
+      {
+         thetaJ = 0.0;
+         for (K = 0; K < numInputActivations; ++K)
+         {
+            thetaJ += a[K] * weightsJK[J][K];
+         } // for (K = 0; K < numInputActivations; ++K)
+         h[J] = activationFunction(thetaJ);
+      } // for (J = 0; J < numHiddenActivations; ++J)
+
+      thetaI = 0.0;
+      for (J = 0; J < numHiddenActivations; ++J)
+      {
+         thetaI += h[J] * weights0J[J];
+      } // for (J = 0; J < numHiddenActivations; ++J)
+      F0 = activationFunction(thetaI);
+
+      time(&dummyEnd);
+      runningTime = double(dummyEnd - dummyStart);
+      return F0;
+   } // double run(double *inputValues)
+
+   /**
+    * Runs the network DURING TRAINING using predetermined test data. Each node is calculated using
+    *    the sigmoid function applied onto a dot product of the weights and the activations.
+    */
+   double runTrain(double *inputValues)
+   {
+      a = inputValues;
+      for (J = 0; J < numHiddenActivations; ++J)
+      {
+         thetaJ[J] = 0.0;
+         for (K = 0; K < numInputActivations; ++K)
+         {
+            thetaJ[J] += a[K] * weightsJK[J][K];
+         } // for (K = 0; K < numInputActivations; ++K)
+         h[J] = activationFunction(thetaJ[J]);
+      } // for (J = 0; J < numHiddenActivations; ++J)
+
+      thetaI[0] = 0.0;
+      for (J = 0; J < numHiddenActivations; ++J)
+      {
+         thetaI[0] += h[J] * weights0J[J];
+      } // for (J = 0; J < numHiddenActivations; ++J)
+      F0 = activationFunction(thetaI[0]);
+      return F0;
+   } // double runTrain(double *inputValues)
+
+   /**
     * Trains the network using predetermined training data using the gradient descent algorithm, which is used to
     *    minimize the error by adjusting the weights derivative of the error with respect to the weights. Uses
-    *    RunTrain() to calculate the activations and outputs of the network.
+    *    runTrain() to calculate the activations and outputs of the network.
     */
-   void Train()
+   void train()
    {
       time(&dummyStart);
       checkNetwork();
@@ -409,7 +473,7 @@ struct NeuralNetwork
          error_reached = 0.0;
          for (D = 0; D < 4; ++D)
          {
-            RunTrain(trainData[D]);
+            runTrain(trainData[D]);
 
             dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
 
@@ -437,7 +501,7 @@ struct NeuralNetwork
                weights0J[J] += deltaWj0[J];
             } // for (J = 0; J < numHiddenActivations; ++J)
 
-            RunTrain(trainData[D]);
+            runTrain(trainData[D]);
             dummyError = 0.5 * pow((trainAnswers[D] - F0), 2);
             error_reached += dummyError;
          } // for (D = 0; D ...
@@ -453,65 +517,7 @@ struct NeuralNetwork
       iterations = epoch;
 
       return;
-   } // void Train()
-
-   /**
-    * Runs the network DURING TRAINING using predetermined test data. Each node is calculated using
-    *    the sigmoid function applied onto a dot product of the weights and the activations.
-    */
-   double RunTrain(double *inputValues)
-   {
-      a = inputValues;
-      for (J = 0; J < numHiddenActivations; ++J)
-      {
-         thetaJ[J] = 0.0;
-         for (K = 0; K < numInputActivations; ++K)
-         {
-            thetaJ[J] += a[K] * weightsJK[J][K];
-         } // for (K = 0; K < numInputActivations; ++K)
-         h[J] = activationFunction(thetaJ[J]);
-      } // for (J = 0; J < numHiddenActivations; ++J)
-
-      thetaI[0] = 0.0;
-      for (J = 0; J < numHiddenActivations; ++J)
-      {
-         thetaI[0] += h[J] * weights0J[J];
-      } // for (J = 0; J < numHiddenActivations; ++J)
-      F0 = activationFunction(thetaI[0]);
-      return F0;
-   } // double RunTrain(double *inputValues)
-
-   /**
-    * Runs the network using predetermined test data. Used for solely running purposes.
-    */
-   double Run(double *inputValues)
-   {
-      time(&dummyStart);
-      a = inputValues;
-      double thetaJ;
-      double thetaI;
-
-      for (J = 0; J < numHiddenActivations; ++J)
-      {
-         thetaJ = 0.0;
-         for (K = 0; K < numInputActivations; ++K)
-         {
-            thetaJ += a[K] * weightsJK[J][K];
-         } // for (K = 0; K < numInputActivations; ++K)
-         h[J] = activationFunction(thetaJ);
-      } // for (J = 0; J < numHiddenActivations; ++J)
-
-      thetaI = 0.0;
-      for (J = 0; J < numHiddenActivations; ++J)
-      {
-         thetaI += h[J] * weights0J[J];
-      } // for (J = 0; J < numHiddenActivations; ++J)
-      F0 = activationFunction(thetaI);
-
-      time(&dummyEnd);
-      runningTime = double(dummyEnd - dummyStart);
-      return F0;
-   } // double Run(double *inputValues)
+   } // void train()
 
    /**
     * Reports the results of the training or running of the network, depending on the mode the network
@@ -529,7 +535,7 @@ struct NeuralNetwork
          cout << "Truth Table" << endl;
          for (int index = 0; index < numCases; ++index)
          {
-            cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << " -> " << Run(trainData[index]) << endl;
+            cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << " -> " << run(trainData[index]) << endl;
          } // for (int index = 0...
          cout << endl;
       } // if (training)
@@ -547,7 +553,7 @@ void testingData(NeuralNetwork* network)
    {
       network->checkNetwork();
       cout << "Running the Network with Test Data: " << network->testData[index][0] << " & " << network->testData[index][1] << endl;
-      cout << network->Run(network->testData[index]) << endl << endl;
+      cout << network->run(network->testData[index]) << endl << endl;
    } // for (int numOutputActivations = 0; numOutputActivations < 4; ++numOutputActivations)
    return;
 } // void testingData(NeuralNetwork* network)
@@ -570,7 +576,7 @@ int main(int argc, char *argv[])
 
    if (network.training) // Training the Network using predetermined training data
    {
-      network.Train();
+      network.train();
       network.reportResults();
    }
 
