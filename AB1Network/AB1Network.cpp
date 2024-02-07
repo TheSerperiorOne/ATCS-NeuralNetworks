@@ -144,6 +144,7 @@ struct NeuralNetwork
    int maxIterations;            // Maximum number of iterations during training
    double randMin;               // Minimum value of the random value assigned to weights
    double randMax;               // Maximum value of the random value assigned to weights
+   bool training;                // Whether or not the network is in training mode (the alternative being running mode)
 
    double* a;                    // Array for Input Activations
    double* h;                    // Array for Hidden Activations
@@ -152,31 +153,17 @@ struct NeuralNetwork
    double** weightsJK;           // Weights between the Hidden Layers and the Output Layer
    double** trainData;           // Training Data (Inputs)
    double* trainAnswers;         // Training Answers (Expected Outputs)
-   double** testData;            // Test Data (Inputs)
    int numCases;                 // Number of Test Cases
-
-   bool training;                // Whether or not the network is in training mode (the alternative being running mode)
-   int I, J, K;                  // Variables used for looping through the outputs, hidden layer, and activations respectively
-   int D;                        // Used to iterate over all the data points in a train case
-   int epoch;                    // Used to iterate over all the test cases
    double* thetaJ;               // Values used for calculating the hidden nodes - dot product of activations and  weights
    double* thetaI;               // Values used for calculating the Output - dot product of hidden layers and corresponding weights
-
-   double dummyError;            // Dummy variable used for calculating the error
-   double lowerOmega;            // Value of T0 - F0
-   double lowerPsi;              // Value of lowerOmega * sigmoidPrime(thetaI)
-   double EPrimeJ0;              // Value of -1 * h[J] * lowerPsi -> indicates derivative of the error with respect to the weights0J
+   double** testData;            // Test Data (Inputs)
    double* deltaWj0;             // Value of -1 * lambda * EPrimeJ0 -> indicates the change in weights0J
    double* capitalOmega;         // Values of lowerPsi * weights0J[J]
    double* capitalPsi;           // Values of capitalOmega * sigmoidPrime(thetaJ)
-   double EPrimeJK;              // Value of -1 * a[K] * capitalPsi -> indicates derivative of the error with respect to weightsJK
-   double deltaWJK;              // Value of -1 * lambda * EPrimeJK -> indicates the change in weightsJK
 
    double trainingTime;          // Time taken for training the network
    double runningTime;           // Time taken for running the network
    bool randomize;               // Whether or not the network is in randomize mode
-   time_t dummyStart;            // Dummy variable used for the start of timing the training or running
-   time_t dummyEnd;              // Dummy variable used for the end of timing the training or running
    int iterations;               // Number of iterations taken during training
    double error_reached;         // Error value reached at the end of training or running
    string reasonEndTraining;     // Reason for ending training
@@ -190,17 +177,7 @@ struct NeuralNetwork
    } // double randomValue()
 
    /**
-    * Sets the configuration parameters for the network based on the following parameters:
-    *   numAct: Number of Activations
-    *   numHidLayer: Number of Hidden Layers
-    *   numHidInEachLayer: Number of Hidden Nodes in each Hidden Layer
-    *   lamb: Lambda Value
-    *   errorThres: Error Threshold
-    *   maxIter: Maximum number of iterations
-    *   min: Minimum value of the random value assigned to weights
-    *   max: Maximum value of the random value assigned to weights
-    *   train: Whether or not the network is in training mode (the alternative being running mode)
-    *   randomize: Whether or not the network is in randomize mode
+    * Sets the configuration parameters for the network
     */
    void setConfigurationParameters()
    {
@@ -246,6 +223,7 @@ struct NeuralNetwork
     */
    void allocateArrayMemory()
    {
+      int I, J, K, D;
       if (training)
       {
          a = new double[numInputActivations]; // Initializing input and hidden activations
@@ -271,6 +249,7 @@ struct NeuralNetwork
          for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
 
       } // if (training)
+
       if (!training)
       {
          a = new double[numInputActivations]; // Initializing input and hidden activations
@@ -297,6 +276,7 @@ struct NeuralNetwork
     */
    void populateArrays()
    {
+      int I, J, K;
       if (training)
       {
          if (randomize) // Randomizing Weights
@@ -314,27 +294,27 @@ struct NeuralNetwork
 
          for (K = 0; K < numInputActivations; ++K) a[K] = 0.0; // Initializing Activations
          for (J = 0; J < numHiddenActivations; ++J) h[J] = 0.0; // Initializing Hidden Nodes
-         F0 = 0; // Initializing Output
+         F0 = 0.0; // Initializing Output
 
          for (J = 0; J < numHiddenActivations; ++J) thetaJ[J] = 0.0; // Initializing Thetas
-         thetaI[0] = 0;
+         thetaI[0] = 0.0;
 
          for (J = 0; J < numHiddenActivations; ++J) capitalOmega[J] = 0.0; // Initializing capital Omega and Psi
          for (J = 0; J < numHiddenActivations; ++J) capitalPsi[J] = 0.0;
 
-         trainData[0][0] = 0; // Initializing Training Data
-         trainData[0][1] = 0;
-         trainData[1][0] = 0;
-         trainData[1][1] = 1;
-         trainData[2][0] = 1;
-         trainData[2][1] = 0;
-         trainData[3][0] = 1;
-         trainData[3][1] = 1;
+         trainData[0][0] = 0.0; // Initializing Training Data
+         trainData[0][1] = 0.0;
+         trainData[1][0] = 0.0;
+         trainData[1][1] = 1.0;
+         trainData[2][0] = 1.0;
+         trainData[2][1] = 0.0;
+         trainData[3][0] = 1.0;
+         trainData[3][1] = 1.0;
 
-         trainAnswers[0] = 0; // Initializing Training Answers
-         trainAnswers[1] = 1;
-         trainAnswers[2] = 1;
-         trainAnswers[3] = 1;
+         trainAnswers[0] = 0.0; // Initializing Training Answers
+         trainAnswers[1] = 1.0;
+         trainAnswers[2] = 1.0;
+         trainAnswers[3] = 1.0;
 
          testData = trainData;
       } // if (training)
@@ -356,16 +336,16 @@ struct NeuralNetwork
 
          for (K = 0; K < numInputActivations; ++K) a[K] = 0.0; // Initializing Activations
          for (J = 0; J < numHiddenActivations; ++J) h[J] = 0.0; // Initializing Hidden Nodes
-         F0 = 0; // Initializing Output
+         F0 = 0.0; // Initializing Output
 
-         testData[0][0] = 0; // Initializing Training Data
-         testData[0][1] = 0;
-         testData[1][0] = 0;
-         testData[1][1] = 1;
-         testData[2][0] = 1;
-         testData[2][1] = 0;
-         testData[3][0] = 1;
-         testData[3][1] = 1;
+         testData[0][0] = 0.0; // Initializing Training Data
+         testData[0][1] = 0.0;
+         testData[1][0] = 0.0;
+         testData[1][1] = 1.0;
+         testData[2][0] = 1.0;
+         testData[2][1] = 0.0;
+         testData[3][0] = 1.0;
+         testData[3][1] = 1.0;
       } // if (!training)
 
       cout << "Populated Arrays!" << endl;
@@ -401,7 +381,10 @@ struct NeuralNetwork
     */
    double run(double *inputValues)
    {
+      time_t dummyStart, dummyEnd;
       time(&dummyStart);
+
+      int I, J, K;
       a = inputValues;
       double thetaJ;
       double thetaI;
@@ -434,6 +417,7 @@ struct NeuralNetwork
     */
    double runTrain(double *inputValues)
    {
+      int I, J, K;
       a = inputValues;
       for (J = 0; J < numHiddenActivations; ++J)
       {
@@ -461,8 +445,12 @@ struct NeuralNetwork
     */
    void train()
    {
+      time_t dummyStart, dummyEnd;
       time(&dummyStart);
       checkNetwork();
+
+      int I, J, K, D, epoch;
+      double dummyError, lowerOmega, lowerPsi, EPrimeJ0, EPrimeJK, deltaWJK;
 
       error_reached = INT_MAX;
       dummyError = 0.0;
