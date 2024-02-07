@@ -281,7 +281,7 @@ struct NeuralNetwork
          for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
 
          testData = new double*[numCases]; // Initializing test data
-         for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
+         for (D = 0; D < numCases; ++D) testData[D] = new double[numInputActivations];
       } // if (!training)
       cout << "Allocated Memory!" << endl;
       return;
