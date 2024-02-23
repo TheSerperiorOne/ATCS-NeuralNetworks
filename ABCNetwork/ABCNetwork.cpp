@@ -1,8 +1,8 @@
 /*
  * Author: Varun Thvar
  * Date of Creation: 26 January 2023
- * Description: This is an implementation of a simple trainable A-B-1 Network
- *              designed for simple boolean algebra problems. This network incorporates the gradient descent algorithm
+ * Description: This is an implementation of a simple trainable A-B-C Network
+ *              designed for OR, AND, and XOR. This network incorporates the gradient descent algorithm
  *              to minimize the error by adjusting the weights by the derivative of the Error function.
  */
 
@@ -14,8 +14,9 @@
 #define derivativeFunction(value)       sigmoidPrime(value)
 
 #define NUMBER_ACTIVATIONS       ((int) 2)
+#define NUMBER_OUTPUTS           ((int) 3)
 #define NUMBER_HIDDEN_LAYERS     ((int) 1)
-#define NUMBER_HIDDEN_NODES      ((int) 2)
+#define NUMBER_HIDDEN_NODES      ((int) 32)
 #define MAX_ITERATIONS           ((int) 100000)
 #define LAMBDA                   ((double) 0.3)
 #define RANDOM_MIN               ((double) -1.5)
@@ -26,7 +27,7 @@
 #define MINUTES_IN_HOUR          ((double) 60.0)
 #define HOURS_IN_DAY             ((double) 24.0)
 #define DAYS_IN_WEEK             ((double) 7.0)
-#define TRAIN                    ((bool) false)
+#define TRAIN                    ((bool) true)
 #define RANDOMIZE                ((bool) true)
 
 using namespace std;
@@ -148,16 +149,17 @@ struct NeuralNetwork
 
    double* a;                    // Array for Input Activations
    double* h;                    // Array for Hidden Activations
-   double F0;                    // Output Value
-   double* weights0J;            // Weights between the Input Layer and the Hidden Layers
+   double* F;                    // Output Value
+   double** weightsIJ;           // Weights between the Input Layer and the Hidden Layers
    double** weightsJK;           // Weights between the Hidden Layers and the Output Layer
    double** trainData;           // Training Data (Inputs)
-   double* trainAnswers;         // Training Answers (Expected Outputs)
+   double** trainAnswers;        // Training Answers (Expected Outputs)
    double* thetaJ;               // Values used for calculating the hidden nodes - dot product of activations and  weights
    double* thetaI;               // Values used for calculating the Output - dot product of hidden layers and corresponding weights
    double** testData;            // Test Data (Inputs)
-   double* deltaWj0;             // Value of -1 * lambda * EPrimeJ0 -> indicates the change in weights0J
-   double* capitalOmega;         // Values of lowerPsi * weights0J[J]
+   double** deltaWIJ;            // Value of -1 * lambda * EPrimeIJ -> indicates the change in weightsIJ
+   double** deltaWJK;            // Value of -1 * lambda * EPrimeJK -> indicates the change in weightsJK
+   double* capitalOmega;         // Values of lowerPsi * weightsIJ[J]
    double* capitalPsi;           // Values of capitalOmega * sigmoidPrime(thetaJ)
 
    int numCases;                 // Number of Test Cases
@@ -181,7 +183,7 @@ struct NeuralNetwork
     */
    void setConfigurationParameters()
    {
-      numOutputActivations = 1;
+      numOutputActivations = NUMBER_OUTPUTS;
       numCases = 4;
 
       numInputActivations = NUMBER_ACTIVATIONS;
@@ -206,7 +208,7 @@ struct NeuralNetwork
    void echoConfigurationParameters()
    {
       cout << endl << "Echoing Configuration Parameters:" << endl;
-      cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << 1 << endl;
+      cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << numOutputActivations << endl;
       cout << "Lambda Value: " << lambda << endl;
       cout << "Error Threshold: " << errorThreshold << endl;
       cout << "Maximum Number of Iterations: " << maxIterations << endl;
@@ -229,8 +231,10 @@ struct NeuralNetwork
       {
          a = new double[numInputActivations]; // Initializing input and hidden activations
          h = new double[numHiddenActivations];
+         F = new double[numOutputActivations];
 
-         weights0J = new double[numHiddenActivations]; // Initializing weights
+         weightsIJ = new double*[numOutputActivations]; // Initializing weights
+         for (I = 0; I < numOutputActivations; ++I) weightsIJ[I] = new double[numHiddenActivations];
          weightsJK = new double*[numHiddenActivations];
          for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
 
@@ -240,11 +244,15 @@ struct NeuralNetwork
          thetaI = new double[numOutputActivations]; // Initializing Thetas
          thetaJ = new double[numHiddenActivations];
 
-         deltaWj0 = new double[numHiddenActivations]; // Initializing delta weights
+         deltaWIJ = new double*[numOutputActivations]; // Initializing delta weights
+         for (I = 0; I < numOutputActivations; ++I) deltaWIJ[I] = new double[numHiddenActivations];
+         deltaWJK = new double*[numHiddenActivations];
+         for (J = 0; J < numHiddenActivations; ++J) deltaWJK[J] = new double[numInputActivations];
 
          trainData = new double*[numCases]; // Initializing Training Data
          for (int index = 0; index < numCases; ++index) trainData[index] = new double[numInputActivations];
-         trainAnswers = new double[numCases];
+         trainAnswers = new double*[numCases];
+         for (int index = 0; index < numCases; ++index) trainAnswers[index] = new double[numOutputActivations];
 
          testData = new double*[numCases]; // Initializing Test Data
          for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
@@ -255,8 +263,10 @@ struct NeuralNetwork
       {
          a = new double[numInputActivations]; // Initializing input and hidden activations
          h = new double[numHiddenActivations];
+         F = new double[numOutputActivations];
 
-         weights0J = new double[numHiddenActivations]; // Initializing weights
+         weightsIJ = new double*[numHiddenActivations]; // Initializing weights
+         for (I = 0; I < numHiddenActivations; ++I) weightsIJ[I] = new double[numHiddenActivations];
          weightsJK = new double*[numHiddenActivations];
          for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
 
@@ -280,77 +290,44 @@ struct NeuralNetwork
    {
       int I, J, K;
 
+      if (randomize) // Randomizing Weights
+      {
+         for (I = 0; I < numOutputActivations; ++I) for (int J = 0; J < numHiddenActivations; ++J)
+            weightsIJ[I][J] = randomValue();
+         for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
+            weightsJK[J][K] = randomValue();
+      } // if (randomize)
+
+      testData[0][0] = 0.0; // Initializing Testing Data
+      testData[0][1] = 0.0;
+      testData[1][0] = 0.0;
+      testData[1][1] = 1.0;
+      testData[2][0] = 1.0;
+      testData[2][1] = 0.0;
+      testData[3][0] = 1.0;
+      testData[3][1] = 1.0;
+
       if (training)
       {
-         if (randomize) // Randomizing Weights
-         {
-            for (J = 0; J < numHiddenActivations; ++J) weights0J[J] = randomValue();
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
-               weightsJK[J][K] = randomValue();
-         } // if (randomize)
-         else // Manually Overriding Values
-         {
-            weights0J[0] = 0.103;
-            weights0J[1] = 0.23;
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K) weightsJK[J][K] = 1.0;
-         } // else
+         trainData = testData;
 
-         for (K = 0; K < numInputActivations; ++K) a[K] = 0.0; // Initializing Activations
-         for (J = 0; J < numHiddenActivations; ++J) h[J] = 0.0; // Initializing Hidden Nodes
-         F0 = 0.0; // Initializing Output
+         trainAnswers[0][0] = 0.0;
+         trainAnswers[0][1] = 0.0;
+         trainAnswers[0][2] = 0.0;
 
-         for (J = 0; J < numHiddenActivations; ++J) thetaJ[J] = 0.0; // Initializing Thetas
-         thetaI[0] = 0.0;
+         trainAnswers[1][0] = 0.0;
+         trainAnswers[1][1] = 1.0;
+         trainAnswers[1][2] = 1.0;
 
-         for (J = 0; J < numHiddenActivations; ++J) capitalOmega[J] = 0.0; // Initializing capital Omega and Psi
-         for (J = 0; J < numHiddenActivations; ++J) capitalPsi[J] = 0.0;
+         trainAnswers[2][0] = 0.0;
+         trainAnswers[2][1] = 1.0;
+         trainAnswers[2][2] = 1.0;
 
-         trainData[0][0] = 0.0; // Initializing Training Data
-         trainData[0][1] = 0.0;
-         trainData[1][0] = 0.0;
-         trainData[1][1] = 1.0;
-         trainData[2][0] = 1.0;
-         trainData[2][1] = 0.0;
-         trainData[3][0] = 1.0;
-         trainData[3][1] = 1.0;
+         trainAnswers[3][0] = 1.0;
+         trainAnswers[3][1] = 1.0;
+         trainAnswers[3][2] = 0.0;
 
-         trainAnswers[0] = 0.0; // Initializing Training Answers
-         trainAnswers[1] = 1.0;
-         trainAnswers[2] = 1.0;
-         trainAnswers[3] = 0.0;
-
-         testData = trainData;
       } // if (training)
-
-      if (!training)
-      {
-         if (randomize) // Randomizing Weights
-         {
-            for (J = 0; J < numHiddenActivations; ++J) weights0J[J] = randomValue();
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
-               weightsJK[J][K] = randomValue();
-         } // if (randomize)
-
-         else // Manually Overriding Values
-         {
-            weights0J[0] = 0.103;
-            weights0J[1] = 0.23;
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K) weightsJK[J][K] = 1.0;
-         } // else
-
-         for (K = 0; K < numInputActivations; ++K) a[K] = 0.0; // Initializing Activations
-         for (J = 0; J < numHiddenActivations; ++J) h[J] = 0.0; // Initializing Hidden Nodes
-         F0 = 0.0; // Initializing Output
-
-         testData[0][0] = 0.0; // Initializing Training Data
-         testData[0][1] = 0.0;
-         testData[1][0] = 0.0;
-         testData[1][1] = 1.0;
-         testData[2][0] = 1.0;
-         testData[2][1] = 0.0;
-         testData[3][0] = 1.0;
-         testData[3][1] = 1.0;
-      } // if (!training)
 
       cout << "Populated Arrays!" << endl;
       return;
@@ -363,7 +340,7 @@ struct NeuralNetwork
    void checkNetwork()
    {
       if (!training)
-         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << 1 << endl;
+         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << numOutputActivations << endl;
       if (training)
       {
          cout << "Training the Network!" << endl;
@@ -383,7 +360,7 @@ struct NeuralNetwork
    *     Each node is calculated using the sigmoid function applied onto a dot product
    *     of the weights and the activations.
     */
-   double run(double *inputValues)
+   double* run(double *inputValues)
    {
       time_t dummyStart, dummyEnd;
       int I, J, K;
@@ -404,24 +381,26 @@ struct NeuralNetwork
          h[J] = activationFunction(thetaJ);
       } // for (J = 0; J < numHiddenActivations; ++J)
 
-      thetaI = 0.0;
-      for (J = 0; J < numHiddenActivations; ++J)
+      for (I = 0; I < numOutputActivations; ++I)
       {
-         thetaI += h[J] * weights0J[J];
-      } // for (J = 0; J < numHiddenActivations; ++J)
-
-      F0 = activationFunction(thetaI);
+         thetaI = 0.0;
+         for (J = 0; J < numHiddenActivations; ++J)
+         {
+            thetaI += h[J] * weightsIJ[I][J];
+         } // for (J = 0; J < numHiddenActivations; ++J)
+         F[I] = activationFunction(thetaI);
+      } // for (I = 0; I < numOutputActivations; ++I)
 
       time(&dummyEnd);
       runningTime = double(dummyEnd - dummyStart);
-      return F0;
+      return F;
    } // double run(double *inputValues)
 
    /**
     * Runs the network ONLY DURING TRAINING using predetermined test data. Each node is calculated using
     *    the sigmoid function applied onto a dot product of the weights and the activations.
     */
-   double runTrain(double *inputValues)
+   double* runTrain(double *inputValues)
    {
       int I, J, K;
       a = inputValues;
@@ -436,14 +415,17 @@ struct NeuralNetwork
          h[J] = activationFunction(thetaJ[J]);
       } // for (J = 0; J < numHiddenActivations; ++J)
 
-      thetaI[0] = 0.0;
-      for (J = 0; J < numHiddenActivations; ++J)
+      for (I = 0; I < numOutputActivations; ++I)
       {
-         thetaI[0] += h[J] * weights0J[J];
-      } // for (J = 0; J < numHiddenActivations; ++J)
+         thetaI[I] = 0.0;
+         for (J = 0; J < numHiddenActivations; ++J)
+         {
+            thetaI[I] += h[J] * weightsIJ[I][J];
+         } // for (J = 0; J < numHiddenActivations; ++J)
+         F[I] = activationFunction(thetaI[I]);
+      } // for (I = 0; I < numOutputActivations; ++I)
 
-      F0 = activationFunction(thetaI[0]);
-      return F0;
+      return F;
    } // double runTrain(double *inputValues)
 
    /**
@@ -456,7 +438,11 @@ struct NeuralNetwork
       time_t dummyStart, dummyEnd;
 
       int I, J, K, D, epoch;
-      double dummyError, lowerOmega, lowerPsi, EPrimeJ0, EPrimeJK, deltaWJK;
+      double dummyError, EPrimeJ0, EPrimeJK;
+      double *lowerOmega, *lowerPsi, *testingArray;
+      lowerOmega = new double[numOutputActivations];
+      lowerPsi = new double[numOutputActivations];
+      testingArray = new double[numInputActivations];
 
       time(&dummyStart);
       checkNetwork();
@@ -468,38 +454,46 @@ struct NeuralNetwork
       while (epoch < maxIterations && error_reached > errorThreshold)
       {
          error_reached = 0.0;
-         for (D = 0; D < 4; ++D)
+         for (D = 0; D < numCases; ++D)
          {
-            runTrain(trainData[D]);
+            testingArray = trainData[D];
+            runTrain(testingArray);
 
-            dummyError = 0.5 * (trainAnswers[D] - F0) * (trainAnswers[D] - F0);
+            for (I = 0; I < numInputActivations; ++I) dummyError += 0.5 * (testingArray[I] - F[I]) * (testingArray[I] - F[I]);
+            dummyError /= numInputActivations;
 
-            lowerOmega = trainAnswers[D] - F0;
-            lowerPsi = lowerOmega * derivativeFunction(thetaI[0]);
+            for (I = 0; I < numOutputActivations; ++I)
+            {
+               lowerOmega[I] = testingArray[I] - F[I];
+               lowerPsi[I] = lowerOmega[I] * derivativeFunction(thetaI[0]);
+               for (J = 0; J < numHiddenActivations; ++J)
+               {
+                  EPrimeJ0 = -h[J] * lowerPsi[I];
+                  deltaWIJ[I][J] = -lambda * EPrimeJ0;
+               } // for (J = 0; J < numHiddenActivations; ++J)
+            } // for (I = 0; I < numOutputActivations; ++I)
 
             for (J = 0; J < numHiddenActivations; ++J)
             {
-               EPrimeJ0 = -1.0 * h[J] * lowerPsi;
-               deltaWj0[J] = -1.0 * lambda * EPrimeJ0;
-            } // for (J = 0; J < numHiddenActivations; ++J)
-
-            for (J = 0; J < numHiddenActivations; ++J)
-            {
-               capitalOmega[J] = lowerPsi * weights0J[J];
+               for (I = 0; I < numOutputActivations; ++I)
+               {
+                  capitalOmega[J] += lowerPsi[I] * weightsIJ[I][J];
+               } // for (I = 0; I < numOutputActivations; ++I)
                capitalPsi[J] = capitalOmega[J] * derivativeFunction(thetaJ[J]);
 
                for (K = 0; K < numInputActivations; ++K)
                {
-                  EPrimeJK = -1.0 * a[K] * capitalPsi[J];
-                  deltaWJK = -1.0 * lambda * EPrimeJK;
-                  weightsJK[J][K] += deltaWJK;
+                  EPrimeJK = -a[K] * capitalPsi[J];
+                  deltaWJK[J][K] = -lambda * EPrimeJK;
                } // for (K = 0; K < numInputActivations; ++K)
-
-               weights0J[J] += deltaWj0[J];
             } // for (J = 0; J < numHiddenActivations; ++J)
 
-            runTrain(trainData[D]);
-            dummyError = 0.5 * (trainAnswers[D] - F0) * (trainAnswers[D] - F0);
+            for (I = 0; I < numOutputActivations; ++I) for (J = 0; J < numHiddenActivations; ++J) weightsIJ[I][J] += deltaWIJ[I][J];
+            for (J = 0; J < numHiddenActivations; ++J) for (K = 0; K < numInputActivations; ++K) weightsJK[J][K] += deltaWJK[J][K];
+
+            runTrain(testingArray);
+            for (I = 0; I < numOutputActivations; ++I) dummyError += 0.5 * (testingArray[I] - F[I]) * (testingArray[I] - F[I]);
+            dummyError /= numOutputActivations;
             error_reached += dummyError;
          } // for (D = 0; D ...
 
@@ -515,6 +509,18 @@ struct NeuralNetwork
 
       return;
    } // void train()
+
+   /**
+    * Prints array in a sequence for the purposes of reporting results after running
+    */
+   void printArray(double* arr, int length)
+   {
+      for (int index = 0; index < length; ++index)
+      {
+         cout << arr[index];
+         if (index != length - 1) cout << ", ";
+      }
+   }
 
    /**
     * Reports the results of the training or running of the network, depending on the mode the network
@@ -533,7 +539,12 @@ struct NeuralNetwork
 
          for (int index = 0; index < numCases; ++index)
          {
-            cout << trainData[index][0] << " & " << trainData[index][1] << " = " << trainAnswers[index] << " -> " << run(trainData[index]) << endl;
+            printArray(trainData[index], numInputActivations);
+            cout << " = ";
+            printArray(trainAnswers[index], 3);
+            cout << " -> ";
+            printArray(run(trainData[index]), 3);
+            cout << endl;
          } // for (int index = 0...
 
          cout << endl;
@@ -551,8 +562,11 @@ void testingData(NeuralNetwork* network)
    for (int index = 0; index < network->numCases; ++index)
    {
       network->checkNetwork();
-      cout << "Running the Network with Test Data: " << network->testData[index][0] << " & " << network->testData[index][1] << endl;
-      cout << network->run(network->testData[index]) << endl << endl;
+      cout << "Running the Network with Test Data: ";
+      network->printArray(network->testData[index], network->numInputActivations);
+      cout << endl;
+      network->printArray(network->run(network->testData[index]), 3);
+      cout << endl << endl;
    } // for (int numOutputActivations = 0; numOutputActivations < 4; ++numOutputActivations)
    return;
 } // void testingData(NeuralNetwork* network)
