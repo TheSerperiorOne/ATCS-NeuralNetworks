@@ -165,7 +165,7 @@ struct NeuralNetwork
    double runningTime;           // Time taken for running the network
    bool randomize;               // Whether or not the network is in randomize mode
    int iterations;               // Number of iterations taken during training
-   double error_reached;         // Error value reached at the end of training or running
+   double errorReached;         // Error value reached at the end of training or running
    string reasonEndTraining;     // Reason for ending training
 
    /**
@@ -461,13 +461,13 @@ struct NeuralNetwork
       time(&dummyStart);
       checkNetwork();
 
-      error_reached = INT_MAX;
+      errorReached = INT_MAX;
       dummyError = 0.0;
       epoch = 0;
 
-      while (epoch < maxIterations && error_reached > errorThreshold)
+      while (epoch < maxIterations && errorReached > errorThreshold)
       {
-         error_reached = 0.0;
+         errorReached = 0.0;
          for (D = 0; D < 4; ++D)
          {
             runTrain(trainData[D]);
@@ -500,12 +500,12 @@ struct NeuralNetwork
 
             runTrain(trainData[D]);
             dummyError = 0.5 * (trainAnswers[D] - F0) * (trainAnswers[D] - F0);
-            error_reached += dummyError;
+            errorReached += dummyError;
          } // for (D = 0; D ...
 
-         error_reached /= numCases;
+         errorReached /= numCases;
          ++epoch;
-      } // while (epoch < maxIterations && error_reached > errorThreshold)
+      } // while (epoch < maxIterations && errorReached > errorThreshold)
 
       if (epoch == maxIterations) reasonEndTraining = "Maximum Number of Iterations Reached";
       else reasonEndTraining = "Error Threshold Reached";
@@ -527,7 +527,7 @@ struct NeuralNetwork
          cout << "Reason for Termination: " << reasonEndTraining << endl;
          cout << "Training Time Taken: ";
          printTime(trainingTime);
-         cout << "Error Reached: " << error_reached << endl;
+         cout << "Error Reached: " << errorReached << endl;
          cout << "Iterations reached: " << iterations << endl << endl;
          cout << "Truth Table and Expected Outputs" << endl;
 

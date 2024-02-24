@@ -14,14 +14,17 @@
 #define derivativeFunction(value)       sigmoidPrime(value)
 
 #define NUMBER_ACTIVATIONS       ((int) 2)
+#define NUMBER_HIDDEN_NODES      ((int) 100)
 #define NUMBER_OUTPUTS           ((int) 3)
 #define NUMBER_HIDDEN_LAYERS     ((int) 1)
-#define NUMBER_HIDDEN_NODES      ((int) 32)
+#define NUM_CASES                ((int) 4)
+
 #define MAX_ITERATIONS           ((int) 100000)
 #define LAMBDA                   ((double) 0.3)
-#define RANDOM_MIN               ((double) -1.5)
-#define RANDOM_MAX               ((double) 1.5)
+#define RANDOM_MIN               ((double) 0.1)
+#define RANDOM_MAX               ((double) 0.5)
 #define ERROR_THRESHOLD          ((double) (2.0e-4))
+
 #define MILLISECONDS_IN_SECOND   ((double) 1000.0)
 #define SECONDS_IN_MINUTE        ((double) 60.0)
 #define MINUTES_IN_HOUR          ((double) 60.0)
@@ -167,7 +170,7 @@ struct NeuralNetwork
    double runningTime;           // Time taken for running the network
    bool randomize;               // Whether or not the network is in randomize mode
    int iterations;               // Number of iterations taken during training
-   double error_reached;         // Error value reached at the end of training or running
+   double errorReached;         // Error value reached at the end of training or running
    string reasonEndTraining;     // Reason for ending training
 
    /**
@@ -184,7 +187,7 @@ struct NeuralNetwork
    void setConfigurationParameters()
    {
       numOutputActivations = NUMBER_OUTPUTS;
-      numCases = 4;
+      numCases = NUM_CASES;
 
       numInputActivations = NUMBER_ACTIVATIONS;
       numHiddenLayers = NUMBER_HIDDEN_LAYERS;
@@ -209,12 +212,15 @@ struct NeuralNetwork
    {
       cout << endl << "Echoing Configuration Parameters:" << endl;
       cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << numOutputActivations << endl;
-      cout << "Lambda Value: " << lambda << endl;
-      cout << "Error Threshold: " << errorThreshold << endl;
-      cout << "Maximum Number of Iterations: " << maxIterations << endl;
-      cout << "Random Value Minimum: " << randMin << endl;
-      cout << "Random Value Maximum: " << randMax << endl;
-      cout << "Randomizing Weights: " << (randomize ? "True" : "False") << endl;
+      if (training)
+      {
+         cout << "Lambda Value: " << lambda << endl;
+         cout << "Error Threshold: " << errorThreshold << endl;
+         cout << "Maximum Number of Iterations: " << maxIterations << endl;
+         cout << "Random Value Minimum: " << randMin << endl;
+         cout << "Random Value Maximum: " << randMax << endl;
+         cout << "Randomizing Weights: " << (randomize ? "True" : "False") << endl;
+      }
       return;
    } //void echoConfigurationParameters()
 
@@ -227,17 +233,20 @@ struct NeuralNetwork
    {
       int I, J, K, D;
 
+      a = new double[numInputActivations]; // Initializing input and hidden activations
+      h = new double[numHiddenActivations];
+      F = new double[numOutputActivations];
+
+      weightsIJ = new double*[numOutputActivations]; // Initializing weights
+      for (I = 0; I < numOutputActivations; ++I) weightsIJ[I] = new double[numHiddenActivations];
+      weightsJK = new double*[numHiddenActivations];
+      for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
+
+      testData = new double*[numCases]; // Initializing Test Data
+      for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
+
       if (training)
       {
-         a = new double[numInputActivations]; // Initializing input and hidden activations
-         h = new double[numHiddenActivations];
-         F = new double[numOutputActivations];
-
-         weightsIJ = new double*[numOutputActivations]; // Initializing weights
-         for (I = 0; I < numOutputActivations; ++I) weightsIJ[I] = new double[numHiddenActivations];
-         weightsJK = new double*[numHiddenActivations];
-         for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
-
          capitalOmega = new double[numHiddenActivations]; // Initializing capital Omega and Psi
          capitalPsi = new double[numHiddenActivations];
 
@@ -253,37 +262,18 @@ struct NeuralNetwork
          for (int index = 0; index < numCases; ++index) trainData[index] = new double[numInputActivations];
          trainAnswers = new double*[numCases];
          for (int index = 0; index < numCases; ++index) trainAnswers[index] = new double[numOutputActivations];
-
-         testData = new double*[numCases]; // Initializing Test Data
-         for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
-
       } // if (training)
 
-      if (!training)
-      {
-         a = new double[numInputActivations]; // Initializing input and hidden activations
-         h = new double[numHiddenActivations];
-         F = new double[numOutputActivations];
-
-         weightsIJ = new double*[numHiddenActivations]; // Initializing weights
-         for (I = 0; I < numHiddenActivations; ++I) weightsIJ[I] = new double[numHiddenActivations];
-         weightsJK = new double*[numHiddenActivations];
-         for (J = 0; J < numHiddenActivations; ++J) weightsJK[J] = new double[numInputActivations];
-
-         testData = new double*[numCases]; // Initializing test data
-         for (D = 0; D < numCases; ++D) testData[D] = new double[numInputActivations];
-
-      } // if (!training)
       cout << "Allocated Memory!" << endl;
       return;
    } //void allocateArrayMemory()
 
    /**
-    * IF RUNNING: Populates the weights with random values, unless the network is a 2-2-1 network, in which
-    *             it manually overrides the values. All other arrays (inputs, hiddens, output) are auto set to 0.0.
+    * IF RUNNING: Populates the weights with random values, unless the network is not in randomize mode in which
+    *             it manually loads the weights. All other arrays (inputs, hiddens, output) are auto set to 0.0.
     *
-    * IF TRAINING: Populates the weights with random values, unless the network is a 2-2-1 network, in which it
-    *              manually overrides the values. All other arrays (inputs, hiddens, output) thetas) are auto set to
+    * IF TRAINING: Populates the weights with random values, unless the network is not in randomize mode in which
+    *              it manually loads the weights. All other arrays (inputs, hiddens, output, thetas) are auto set to
     *              0.0.
     */
    void populateArrays()
@@ -297,6 +287,11 @@ struct NeuralNetwork
          for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
             weightsJK[J][K] = randomValue();
       } // if (randomize)
+
+      if (!randomize) // Load Weights
+      {
+         // TODO add the ability to load weights
+      }
 
       testData[0][0] = 0.0; // Initializing Testing Data
       testData[0][1] = 0.0;
@@ -344,7 +339,7 @@ struct NeuralNetwork
       if (training)
       {
          cout << "Training the Network!" << endl;
-         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << 1 << endl;
+         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << numOutputActivations << endl;
          cout << "Lambda Value: " << lambda << endl;
          cout << "Error Threshold: " << errorThreshold << endl;
          cout << "Maximum Number of Iterations: " << maxIterations << endl;
@@ -438,43 +433,40 @@ struct NeuralNetwork
       time_t dummyStart, dummyEnd;
 
       int I, J, K, D, epoch;
-      double dummyError, EPrimeJ0, EPrimeJK;
-      double *lowerOmega, *lowerPsi, *testingArray;
+      double dummyError, EPrimeIJ, EPrimeJK;
+      double *lowerOmega, *lowerPsi, *testingArray, *answersArray;
       lowerOmega = new double[numOutputActivations];
       lowerPsi = new double[numOutputActivations];
-      testingArray = new double[numInputActivations];
 
       time(&dummyStart);
       checkNetwork();
 
-      error_reached = INT_MAX;
-      dummyError = 0.0;
-      epoch = 0;
+      errorReached = INT_MAX;
 
-      while (epoch < maxIterations && error_reached > errorThreshold)
+      while (epoch < maxIterations && errorReached > errorThreshold)
       {
-         error_reached = 0.0;
          for (D = 0; D < numCases; ++D)
          {
             testingArray = trainData[D];
+            answersArray = trainAnswers[D];
             runTrain(testingArray);
-
-            for (I = 0; I < numInputActivations; ++I) dummyError += 0.5 * (testingArray[I] - F[I]) * (testingArray[I] - F[I]);
-            dummyError /= numInputActivations;
 
             for (I = 0; I < numOutputActivations; ++I)
             {
-               lowerOmega[I] = testingArray[I] - F[I];
-               lowerPsi[I] = lowerOmega[I] * derivativeFunction(thetaI[0]);
+               lowerOmega[I] = answersArray[I] - F[I];
+               dummyError += 0.5 * lowerOmega[I] * lowerOmega[I];
+               lowerPsi[I] = lowerOmega[I] * derivativeFunction(thetaI[I]);
+
                for (J = 0; J < numHiddenActivations; ++J)
                {
-                  EPrimeJ0 = -h[J] * lowerPsi[I];
-                  deltaWIJ[I][J] = -lambda * EPrimeJ0;
+                  EPrimeIJ = -h[J] * lowerPsi[I];
+                  deltaWIJ[I][J] = -lambda * EPrimeIJ;
                } // for (J = 0; J < numHiddenActivations; ++J)
             } // for (I = 0; I < numOutputActivations; ++I)
 
             for (J = 0; J < numHiddenActivations; ++J)
             {
+               capitalOmega[J] = 0;
                for (I = 0; I < numOutputActivations; ++I)
                {
                   capitalOmega[J] += lowerPsi[I] * weightsIJ[I][J];
@@ -488,24 +480,38 @@ struct NeuralNetwork
                } // for (K = 0; K < numInputActivations; ++K)
             } // for (J = 0; J < numHiddenActivations; ++J)
 
-            for (I = 0; I < numOutputActivations; ++I) for (J = 0; J < numHiddenActivations; ++J) weightsIJ[I][J] += deltaWIJ[I][J];
-            for (J = 0; J < numHiddenActivations; ++J) for (K = 0; K < numInputActivations; ++K) weightsJK[J][K] += deltaWJK[J][K];
+            for (J = 0; J < numHiddenActivations; ++J)
+            {
+               for (I = 0; I < numOutputActivations; ++I)
+               {
+                  weightsIJ[I][J] += deltaWIJ[I][J];
+               }
+               for (K = 0; K < numInputActivations; ++K)
+               {
+                  weightsJK[J][K] += deltaWJK[J][K];
+               }
+            } // for (J = 0; J < numHiddenActivations; ++J)
 
             runTrain(testingArray);
-            for (I = 0; I < numOutputActivations; ++I) dummyError += 0.5 * (testingArray[I] - F[I]) * (testingArray[I] - F[I]);
-            dummyError /= numOutputActivations;
-            error_reached += dummyError;
+            errorReached = 0.0;
+            dummyError = 0.0;
+            for (I = 0; I < numOutputActivations; ++I)
+            {
+               dummyError += 0.5 * (testingArray[I] - F[I]) * (testingArray[I] - F[I]);
+            } // for (I = 0; I < numOutputActivations; ++I)
+            errorReached += dummyError;
          } // for (D = 0; D ...
 
-         error_reached /= numCases;
+         errorReached /= numCases;
          ++epoch;
-      } // while (epoch < maxIterations && error_reached > errorThreshold)
+      } // while (epoch < maxIterations && errorReached > errorThreshold)
 
-      if (epoch == maxIterations) reasonEndTraining = "Maximum Number of Iterations Reached";
+      iterations = epoch;
+
+      if (iterations == maxIterations) reasonEndTraining = "Maximum Number of Iterations Reached";
       else reasonEndTraining = "Error Threshold Reached";
 
       trainingTime = double(time(&dummyEnd) - dummyStart);
-      iterations = epoch;
 
       return;
    } // void train()
@@ -533,7 +539,7 @@ struct NeuralNetwork
          cout << "Reason for Termination: " << reasonEndTraining << endl;
          cout << "Training Time Taken: ";
          printTime(trainingTime);
-         cout << "Error Reached: " << error_reached << endl;
+         cout << "Error Reached: " << errorReached << endl;
          cout << "Iterations reached: " << iterations << endl << endl;
          cout << "Truth Table and Expected Outputs" << endl;
 
