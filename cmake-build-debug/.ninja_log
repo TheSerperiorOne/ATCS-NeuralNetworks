@@ -1,8 +1,6 @@
 # ninja log v5
 472	751	1707331409898175874	ATCS_Neural_Networks	db24573eab2a11b7
-8	468	1707331409607640583	CMakeFiles/ATCS_Neural_Networks.dir/AB1Network/AB1Network.cpp.o	968cfd3206ebb553
+16	632	1708985522922761426	CMakeFiles/ATCS_Neural_Networks.dir/ABCNetwork/ABCNetwork.cpp.o	47ead73ab481fbd5
+14	624	1708985522919548400	CMakeFiles/ATCS_Neural_Networks.dir/AB1Network/AB1Network.cpp.o	968cfd3206ebb553
 11	390	1707171280233641850	CMakeFiles/ATCS_Neural_Networks.dir/main.cpp.o	7e809930f5521a8
-2	161	1708537861806206658	build.ninja	f769ed1ed9612c36
-29	764	1708628054768331782	CMakeFiles/ATCS_Neural_Networks.dir/ABCNetwork/ABCNetwork.cpp.o	47ead73ab481fbd5
-11	478	1708628281745388569	CMakeFiles/ATCS_Neural_Networks.dir/ABCNetwork/ABCNetwork.cpp.o	47ead73ab481fbd5
-10	464	1708628493521150539	CMakeFiles/ATCS_Neural_Networks.dir/ABCNetwork/ABCNetwork.cpp.o	47ead73ab481fbd5
+2	161	1709238234325371896	build.ninja	f769ed1ed9612c36

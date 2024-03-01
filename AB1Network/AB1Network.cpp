@@ -285,14 +285,17 @@ struct NeuralNetwork
          if (randomize) // Randomizing Weights
          {
             for (J = 0; J < numHiddenActivations; ++J) weights0J[J] = randomValue();
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
-               weightsJK[J][K] = randomValue();
+            for (J = 0; J < numHiddenActivations; ++J)
+               for (int K = 0; K < numInputActivations; ++K)
+                  weightsJK[J][K] = randomValue();
          } // if (randomize)
          else // Manually Overriding Values
          {
             weights0J[0] = 0.103;
             weights0J[1] = 0.23;
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K) weightsJK[J][K] = 1.0;
+            for (J = 0; J < numHiddenActivations; ++J)
+               for (int K = 0; K < numInputActivations; ++K)
+                  weightsJK[J][K] = 1.0;
          } // else
 
          for (K = 0; K < numInputActivations; ++K) a[K] = 0.0; // Initializing Activations
@@ -327,15 +330,19 @@ struct NeuralNetwork
          if (randomize) // Randomizing Weights
          {
             for (J = 0; J < numHiddenActivations; ++J) weights0J[J] = randomValue();
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
-               weightsJK[J][K] = randomValue();
+
+            for (J = 0; J < numHiddenActivations; ++J)
+               for (int K = 0; K < numInputActivations; ++K)
+                  weightsJK[J][K] = randomValue();
          } // if (randomize)
 
          else // Manually Overriding Values
          {
             weights0J[0] = 0.103;
             weights0J[1] = 0.23;
-            for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K) weightsJK[J][K] = 1.0;
+            for (J = 0; J < numHiddenActivations; ++J)
+               for (int K = 0; K < numInputActivations; ++K)
+                  weightsJK[J][K] = 1.0;
          } // else
 
          for (K = 0; K < numInputActivations; ++K) a[K] = 0.0; // Initializing Activations
@@ -507,8 +514,10 @@ struct NeuralNetwork
          ++epoch;
       } // while (epoch < maxIterations && errorReached > errorThreshold)
 
-      if (epoch == maxIterations) reasonEndTraining = "Maximum Number of Iterations Reached";
-      else reasonEndTraining = "Error Threshold Reached";
+      if (epoch == maxIterations)
+         reasonEndTraining = "Maximum Number of Iterations Reached";
+      else
+         reasonEndTraining = "Error Threshold Reached";
 
       trainingTime = double(time(&dummyEnd) - dummyStart);
       iterations = epoch;

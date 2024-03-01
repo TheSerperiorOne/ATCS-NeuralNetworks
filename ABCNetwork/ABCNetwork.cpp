@@ -1,20 +1,23 @@
 /*
  * Author: Varun Thvar
- * Date of Creation: 26 January 2023
+ * Date of Creation: 21 February 2023
  * Description: This is an implementation of a simple trainable A-B-C Network
- *              designed for OR, AND, and XOR. This network incorporates the gradient descent algorithm
- *              to minimize the error by adjusting the weights by the derivative of the Error function.
+ *              designed for OR, AND, and XOR, all at the same time. This network incorporates the
+ *              gradient descent algorithm to minimize the error by adjusting the weights by the
+ *              derivative of the Error function.
  */
 
+#include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <time.h>
+#include <fstream>
 
 #define activationFunction(value)       sigmoid(value)
 #define derivativeFunction(value)       sigmoidPrime(value)
 
 #define NUMBER_ACTIVATIONS       ((int) 2)
-#define NUMBER_HIDDEN_NODES      ((int) 100)
+#define NUMBER_HIDDEN_NODES      ((int) 5)
 #define NUMBER_OUTPUTS           ((int) 3)
 #define NUMBER_HIDDEN_LAYERS     ((int) 1)
 #define NUM_CASES                ((int) 4)
@@ -25,13 +28,17 @@
 #define RANDOM_MAX               ((double) 0.5)
 #define ERROR_THRESHOLD          ((double) (2.0e-4))
 
+#define TRAIN                    ((bool) true)
+#define RANDOMIZE                ((bool) true)
+#define WEIGHTS_FILE             ((string) "../OptionI")
+#define SAVE_WEIGHTS             ((bool) false)
+
 #define MILLISECONDS_IN_SECOND   ((double) 1000.0)
 #define SECONDS_IN_MINUTE        ((double) 60.0)
 #define MINUTES_IN_HOUR          ((double) 60.0)
 #define HOURS_IN_DAY             ((double) 24.0)
 #define DAYS_IN_WEEK             ((double) 7.0)
-#define TRAIN                    ((bool) true)
-#define RANDOMIZE                ((bool) true)
+
 
 using namespace std;
 
@@ -133,6 +140,9 @@ void printTime(double seconds)
  *          with respect to the weights
  *   run() - Runs the network using predetermined test data. Each node is calculated using the sigmoid function
  *          applied onto a dot product of the weights and the activations
+ *   runTrain() - Runs the network ONLY DURING TRAINING using predetermined test data. Each node is calculated using the
+ *          sigmoid function applied onto a dot product of the weights and the activations.
+ *   printArray() - Prints array in a sequence for the purposes of reporting results after running
  *   reportResults() - Reports the results of the training or running of the network, depending on the mode
  *          the network is in training mode or not
  *
@@ -143,7 +153,7 @@ struct NeuralNetwork
    int numInputActivations;      // Number of Input Activations
    int numHiddenActivations;     // Number of Hidden Nodes in each Hidden Layer
    int numHiddenLayers;          // Number of Hidden Layers
-   double lambda;                // Learning Rate - changes how much affect the derivative of the error has on the weights
+   double lambda;                // Learning Rate - changes how much effect the derivative of the error has on the weights
    double errorThreshold;        // Threshold for the error to reach during training
    int maxIterations;            // Maximum number of iterations during training
    double randMin;               // Minimum value of the random value assigned to weights
@@ -170,8 +180,10 @@ struct NeuralNetwork
    double runningTime;           // Time taken for running the network
    bool randomize;               // Whether or not the network is in randomize mode
    int iterations;               // Number of iterations taken during training
-   double errorReached;         // Error value reached at the end of training or running
+   double errorReached;          // Error value reached at the end of training or running
    string reasonEndTraining;     // Reason for ending training
+   bool saveWeights;             // True if the network  saves the weights at the end of training, false if otherwise
+   string filePathLoading;       // File path for loading the weights instead of randomizing
 
    /**
     * Outputs a random value based on the range as given in the configuration parameters
@@ -201,17 +213,20 @@ struct NeuralNetwork
 
       training = TRAIN;
       randomize = RANDOMIZE;
+      saveWeights = SAVE_WEIGHTS;
+      filePathLoading = WEIGHTS_FILE;
 
       return;
    } // void setConfigurationParameters(int numAct, int numHidLayer ...
 
    /**
-   * Outputs the configuration parameters for the network to check if they are set correctly
-   */
+    * Outputs the configuration parameters for the network to check if they are set correctly
+    */
    void echoConfigurationParameters()
    {
       cout << endl << "Echoing Configuration Parameters:" << endl;
-      cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << numOutputActivations << endl;
+      cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" <<
+         numOutputActivations << endl;
       if (training)
       {
          cout << "Lambda Value: " << lambda << endl;
@@ -282,16 +297,62 @@ struct NeuralNetwork
 
       if (randomize) // Randomizing Weights
       {
-         for (I = 0; I < numOutputActivations; ++I) for (int J = 0; J < numHiddenActivations; ++J)
-            weightsIJ[I][J] = randomValue();
-         for (J = 0; J < numHiddenActivations; ++J) for (int K = 0; K < numInputActivations; ++K)
-            weightsJK[J][K] = randomValue();
+         for (I = 0; I < numOutputActivations; ++I)
+            for (int J = 0; J < numHiddenActivations; ++J)
+               weightsIJ[I][J] = randomValue();
+         for (J = 0; J < numHiddenActivations; ++J)
+            for (int K = 0; K < numInputActivations; ++K)
+               weightsJK[J][K] = randomValue();
       } // if (randomize)
 
-      if (!randomize) // Load Weights
+      if (!randomize) // Loading Weights
       {
-         // TODO add the ability to load weights
-      }
+         ifstream file;
+         file.open(filePathLoading);
+         string configuration = to_string(numInputActivations) + "_" + to_string(numHiddenActivations)
+                           + "_" + to_string(numOutputActivations);
+
+         if (file.is_open())
+         {
+            string firstLine;
+            getline(file, firstLine);
+            if (firstLine == configuration)
+            {
+               string valueString;
+               double value;
+
+               for (K = 0; K < numInputActivations; K++)
+               {
+                  for (J = 0; J < numHiddenActivations; J++)
+                  {
+                     getline(file, valueString);
+                     value = stod(valueString);
+                     weightsJK[J][K] = value;
+                  } // for (J = 0; J < numHiddenActivations; J++)
+               } // for (K = 0; K < numInputActivations; K++)
+
+               for (J = 0; J < numHiddenActivations; J++)
+               {
+                  for (I = 0; I < numOutputActivations; I++)
+                  {
+                     getline(file, valueString);
+                     value = stod(valueString);
+                     weightsIJ[I][J] = value;
+                  } // for (I = 0; I < numOutputActivations; I++)
+               } // for (J = 0; J < numHiddenActivations; J++)
+            } // if (firstLine == configuration)
+            else // (firstLine != configuration)
+            {
+               cout << "File configuration does not match - all weights are set to default" << endl;
+            } // else // (firstLine != configuration)
+            file.close();
+         } // if (file.is_open())
+
+         else // (!file.is_open())
+         {
+            cout << "File not loaded - all weights are set to default" << endl;
+         } // else (!file.is_open())
+      } // if (!randomize)
 
       testData[0][0] = 0.0; // Initializing Testing Data
       testData[0][1] = 0.0;
@@ -335,11 +396,13 @@ struct NeuralNetwork
    void checkNetwork()
    {
       if (!training)
-         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << numOutputActivations << endl;
+         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-"
+         << numOutputActivations << endl;
       if (training)
       {
          cout << "Training the Network!" << endl;
-         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-" << numOutputActivations << endl;
+         cout << "Network Type: " << numInputActivations << "-" << numHiddenActivations << "-"
+              << numOutputActivations << endl;
          cout << "Lambda Value: " << lambda << endl;
          cout << "Error Threshold: " << errorThreshold << endl;
          cout << "Maximum Number of Iterations: " << maxIterations << endl;
@@ -433,7 +496,7 @@ struct NeuralNetwork
       time_t dummyStart, dummyEnd;
 
       int I, J, K, D, epoch;
-      double dummyError, EPrimeIJ, EPrimeJK;
+      double EPrimeIJ, EPrimeJK;
       double *lowerOmega, *lowerPsi, *testingArray, *answersArray;
       lowerOmega = new double[numOutputActivations];
       lowerPsi = new double[numOutputActivations];
@@ -441,10 +504,11 @@ struct NeuralNetwork
       time(&dummyStart);
       checkNetwork();
 
-      errorReached = INT_MAX;
+      errorReached = DBL_MAX;
 
       while (epoch < maxIterations && errorReached > errorThreshold)
       {
+         errorReached = 0.0;
          for (D = 0; D < numCases; ++D)
          {
             testingArray = trainData[D];
@@ -454,7 +518,6 @@ struct NeuralNetwork
             for (I = 0; I < numOutputActivations; ++I)
             {
                lowerOmega[I] = answersArray[I] - F[I];
-               dummyError += 0.5 * lowerOmega[I] * lowerOmega[I];
                lowerPsi[I] = lowerOmega[I] * derivativeFunction(thetaI[I]);
 
                for (J = 0; J < numHiddenActivations; ++J)
@@ -493,13 +556,10 @@ struct NeuralNetwork
             } // for (J = 0; J < numHiddenActivations; ++J)
 
             runTrain(testingArray);
-            errorReached = 0.0;
-            dummyError = 0.0;
             for (I = 0; I < numOutputActivations; ++I)
             {
-               dummyError += 0.5 * (testingArray[I] - F[I]) * (testingArray[I] - F[I]);
+               errorReached += 0.5 * (answersArray[I] - F[I]) * (answersArray[I] - F[I]);
             } // for (I = 0; I < numOutputActivations; ++I)
-            errorReached += dummyError;
          } // for (D = 0; D ...
 
          errorReached /= numCases;
@@ -511,13 +571,51 @@ struct NeuralNetwork
       if (iterations == maxIterations) reasonEndTraining = "Maximum Number of Iterations Reached";
       else reasonEndTraining = "Error Threshold Reached";
 
+      if (saveWeights) // Saving weights
+      {
+         string fileName = filePathLoading;
+         ifstream file;
+         file.open(fileName);
+
+         while (file) // Making sure a new file is created
+         {
+            file.close();
+            fileName += "I";
+            file.open(fileName);
+         } // while (file)
+
+         ofstream outfile(fileName);
+
+         outfile << to_string(numInputActivations) + "_" + to_string(numHiddenActivations)
+                           + "_" + to_string(numOutputActivations) << endl;
+
+         for (K = 0; K < numInputActivations; K++)
+         {
+            for (J = 0; J < numHiddenActivations; J++)
+            {
+               outfile << to_string(weightsJK[J][K]) << endl;
+            } // for (J = 0; J < numHiddenActivations; J++)
+         } // for (K = 0; K < numInputActivations; K++)
+
+         for (J = 0; J < numHiddenActivations; J++)
+         {
+            for (I = 0; I < numOutputActivations; I++)
+            {
+               outfile << to_string(weightsIJ[I][J]) << endl;
+            } // for (I = 0; I < numOutputActivations; I++)
+         } // for (J = 0; J < numHiddenActivations; J++)
+
+         outfile.close();
+      } // if (saveWeights)
+
       trainingTime = double(time(&dummyEnd) - dummyStart);
 
       return;
    } // void train()
 
    /**
-    * Prints array in a sequence for the purposes of reporting results after running
+    * Prints array in a sequence for the purposes of reporting results after running. Follows the format
+    *   value1, value2, value3, ... valueN
     */
    void printArray(double* arr, int length)
    {
@@ -525,8 +623,9 @@ struct NeuralNetwork
       {
          cout << arr[index];
          if (index != length - 1) cout << ", ";
-      }
-   }
+      } // for (int index = 0; index < length; ++index)
+      return;
+   } // void printArray(double* arr, int length)
 
    /**
     * Reports the results of the training or running of the network, depending on the mode the network
@@ -547,9 +646,9 @@ struct NeuralNetwork
          {
             printArray(trainData[index], numInputActivations);
             cout << " = ";
-            printArray(trainAnswers[index], 3);
+            printArray(trainAnswers[index], numOutputActivations);
             cout << " -> ";
-            printArray(run(trainData[index]), 3);
+            printArray(run(trainData[index]), numOutputActivations);
             cout << endl;
          } // for (int index = 0...
 
@@ -571,7 +670,7 @@ void testingData(NeuralNetwork* network)
       cout << "Running the Network with Test Data: ";
       network->printArray(network->testData[index], network->numInputActivations);
       cout << endl;
-      network->printArray(network->run(network->testData[index]), 3);
+      network->printArray(network->run(network->testData[index]),  network->numOutputActivations);
       cout << endl << endl;
    } // for (int numOutputActivations = 0; numOutputActivations < 4; ++numOutputActivations)
    return;
