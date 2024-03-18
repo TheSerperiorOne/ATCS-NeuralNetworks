@@ -25,7 +25,7 @@
 #define MINUTES_IN_HOUR          ((double) 60.0)
 #define HOURS_IN_DAY             ((double) 24.0)
 #define DAYS_IN_WEEK             ((double) 7.0)
-#define CONFIG_FILE_PATH         "AB1/configAB1.toml"
+#define CONFIG_FILE_PATH         "config.toml"
 #define TRUE_STRING              "true"
 
 using namespace std;
