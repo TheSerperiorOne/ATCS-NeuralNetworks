@@ -12,7 +12,8 @@
 		[
 			"add_executable",
 			"target_link_options",
-			"target_compile_options"
+			"target_compile_options",
+			"target_include_directories"
 		],
 		"files" : 
 		[
@@ -32,13 +33,19 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 14,
+				"line" : 13,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 13,
+				"line" : 12,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 10,
 				"parent" : 0
 			}
 		]
@@ -53,19 +60,15 @@
 				},
 				{
 					"backtrace" : 3,
-					"fragment" : "-Ofast"
+					"fragment" : "-Og"
 				},
 				{
 					"backtrace" : 3,
-					"fragment" : "-flto"
+					"fragment" : "-g3"
 				},
 				{
 					"backtrace" : 3,
-					"fragment" : "-march=native"
-				},
-				{
-					"backtrace" : 3,
-					"fragment" : "-mtune=native"
+					"fragment" : "-glldb"
 				},
 				{
 					"backtrace" : 3,
@@ -78,6 +81,21 @@
 				{
 					"backtrace" : 3,
 					"fragment" : "-fsanitize=address"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-fno-omit-frame-pointer"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 4,
+					"path" : "/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCBackpropNetwork"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCBackpropNetwork/tomlplusplus/include"
 				}
 			],
 			"language" : "CXX",
@@ -91,9 +109,7 @@
 			},
 			"sourceIndexes" : 
 			[
-				0,
-				1,
-				2
+				0
 			]
 		}
 	],
@@ -112,22 +128,17 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "-Ofast",
+				"fragment" : "-Og",
 				"role" : "flags"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "-flto",
+				"fragment" : "-g3",
 				"role" : "flags"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "-march=native",
-				"role" : "flags"
-			},
-			{
-				"backtrace" : 2,
-				"fragment" : "-mtune=native",
+				"fragment" : "-glldb",
 				"role" : "flags"
 			},
 			{
@@ -143,6 +154,11 @@
 			{
 				"backtrace" : 2,
 				"fragment" : "-fsanitize=address",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-fno-omit-frame-pointer",
 				"role" : "flags"
 			}
 		],
@@ -161,9 +177,7 @@
 			"name" : "Source Files",
 			"sourceIndexes" : 
 			[
-				0,
-				1,
-				2
+				0
 			]
 		}
 	],
@@ -172,19 +186,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "main.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "AB1Network/AB1Network.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "ABCNetwork/ABCNetwork.cpp",
+			"path" : "ABCBackpropNetwork/ABCBackPropagation.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

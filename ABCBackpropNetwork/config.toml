@@ -1,0 +1,21 @@
+#Network Configuration
+numInputActivations = 2     # Number of input activations
+numHiddenActivations = 5    # Number of hidden activations
+numOutputActivations = 3    # Number of output activations
+weightsConfiguration = 0    # 0 for random, 1 for file, 2 for manual
+
+#Training Configuration
+training = true             # true for training and running, false for just running
+numCases = 4                # Number of cases in the training data
+maxIterations = 100000      # Maximum number of iterations
+lambda = 0.3                # Learning rate
+randMin = 0.1               # Minimum random weight
+randMax = 0.5               # Maximum random weight
+errorThreshold = 0.00002    # Error threshold
+savingWeights = false       # true for saving weights to file, false for not saving
+
+#File Configuration
+fileWeights = "WeightsI"
+trainingFile = "TrainingData.txt"
+trainingAnswersFile = "TrainingAnswers.txt"
+testingFile = "TestData.txt"

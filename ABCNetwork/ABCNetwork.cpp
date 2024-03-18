@@ -13,8 +13,6 @@
 #include <time.h>
 #include <fstream>
 
-#define activationFunction(value)       sigmoid(value)
-#define derivativeFunction(value)       sigmoidPrime(value)
 
 #define NUMBER_ACTIVATIONS       ((int) 2)
 #define NUMBER_HIDDEN_NODES      ((int) 5)
@@ -31,6 +29,9 @@
 #define TRAIN                    ((bool) true)
 #define RANDOMIZE                ((bool) true)
 #define WEIGHTS_FILE             ((string) "../OptionI")
+#define TRAINING_FILE            "../TrainingData.txt"
+#define TRAINING_ANSWERS         "../TrainingAnswers.txt"
+#define TESTING_FILE             "../TestData.txt"
 #define SAVE_WEIGHTS             ((bool) false)
 
 #define MILLISECONDS_IN_SECOND   ((double) 1000.0)
@@ -41,24 +42,6 @@
 
 
 using namespace std;
-
-/**
- * Implements the linear function, which is defined by
- *    linear(x) = x
- */
-double linear(double value)
-{
-   return value;
-} // double linear(double value)
-
-/**
- * Implements the derivative linear function, which is defined by
- *    linearPrime(x) = 1.0
- */
-double linearPrime(double value)
-{
-   return 1.0;
-} // double linearPrime(double value)
 
 /**
  * This implements the sigmoid function, which is defined by
@@ -166,7 +149,7 @@ struct NeuralNetwork
    double** weightsIJ;           // Weights between the Input Layer and the Hidden Layers
    double** weightsJK;           // Weights between the Hidden Layers and the Output Layer
    double** trainData;           // Training Data (Inputs)
-   double** trainAnswers;        // Training Answers (Expected Outputs)
+   double** trainAnswers;        // TrainingAnswers.txt (Expected Outputs)
    double* thetaJ;               // Values used for calculating the hidden nodes - dot product of activations and  weights
    double* thetaI;               // Values used for calculating the Output - dot product of hidden layers and corresponding weights
    double** testData;            // Test Data (Inputs)
@@ -182,8 +165,8 @@ struct NeuralNetwork
    int iterations;               // Number of iterations taken during training
    double errorReached;          // Error value reached at the end of training or running
    string reasonEndTraining;     // Reason for ending training
-   bool saveWeights;             // True if the network  saves the weights at the end of training, false if otherwise
-   string filePathLoading;       // File path for loading the weights instead of randomizing
+   bool savingWeights;             // True if the network  saves the weights at the end of training, false if otherwise
+   string fileWeights;       // File path for loading the weights instead of randomizing
 
    /**
     * Outputs a random value based on the range as given in the configuration parameters
@@ -213,8 +196,8 @@ struct NeuralNetwork
 
       training = TRAIN;
       randomize = RANDOMIZE;
-      saveWeights = SAVE_WEIGHTS;
-      filePathLoading = WEIGHTS_FILE;
+      savingWeights = SAVE_WEIGHTS;
+      fileWeights = WEIGHTS_FILE;
 
       return;
    } // void setConfigurationParameters(int numAct, int numHidLayer ...
@@ -308,7 +291,7 @@ struct NeuralNetwork
       if (!randomize) // Loading Weights
       {
          ifstream file;
-         file.open(filePathLoading);
+         file.open(fileWeights);
          string configuration = to_string(numInputActivations) + "_" + to_string(numHiddenActivations)
                            + "_" + to_string(numOutputActivations);
 
@@ -436,7 +419,7 @@ struct NeuralNetwork
          {
             thetaJ += a[K] * weightsJK[J][K];
          } // for (K = 0; K < numInputActivations; ++K)
-         h[J] = activationFunction(thetaJ);
+         h[J] = sigmoid(thetaJ);
       } // for (J = 0; J < numHiddenActivations; ++J)
 
       for (I = 0; I < numOutputActivations; ++I)
@@ -446,7 +429,7 @@ struct NeuralNetwork
          {
             thetaI += h[J] * weightsIJ[I][J];
          } // for (J = 0; J < numHiddenActivations; ++J)
-         F[I] = activationFunction(thetaI);
+         F[I] = sigmoid(thetaI);
       } // for (I = 0; I < numOutputActivations; ++I)
 
       time(&dummyEnd);
@@ -470,7 +453,7 @@ struct NeuralNetwork
          {
             thetaJ[J] += a[K] * weightsJK[J][K];
          } // for (K = 0; K < numInputActivations; ++K)
-         h[J] = activationFunction(thetaJ[J]);
+         h[J] = sigmoid(thetaJ[J]);
       } // for (J = 0; J < numHiddenActivations; ++J)
 
       for (I = 0; I < numOutputActivations; ++I)
@@ -480,7 +463,7 @@ struct NeuralNetwork
          {
             thetaI[I] += h[J] * weightsIJ[I][J];
          } // for (J = 0; J < numHiddenActivations; ++J)
-         F[I] = activationFunction(thetaI[I]);
+         F[I] = sigmoid(thetaI[I]);
       } // for (I = 0; I < numOutputActivations; ++I)
 
       return F;
@@ -518,7 +501,7 @@ struct NeuralNetwork
             for (I = 0; I < numOutputActivations; ++I)
             {
                lowerOmega[I] = answersArray[I] - F[I];
-               lowerPsi[I] = lowerOmega[I] * derivativeFunction(thetaI[I]);
+               lowerPsi[I] = lowerOmega[I] * sigmoidPrime(thetaI[I]);
 
                for (J = 0; J < numHiddenActivations; ++J)
                {
@@ -534,7 +517,7 @@ struct NeuralNetwork
                {
                   capitalOmega[J] += lowerPsi[I] * weightsIJ[I][J];
                } // for (I = 0; I < numOutputActivations; ++I)
-               capitalPsi[J] = capitalOmega[J] * derivativeFunction(thetaJ[J]);
+               capitalPsi[J] = capitalOmega[J] * sigmoidPrime(thetaJ[J]);
 
                for (K = 0; K < numInputActivations; ++K)
                {
@@ -571,9 +554,9 @@ struct NeuralNetwork
       if (iterations == maxIterations) reasonEndTraining = "Maximum Number of Iterations Reached";
       else reasonEndTraining = "Error Threshold Reached";
 
-      if (saveWeights) // Saving weights
+      if (savingWeights) // Saving weights
       {
-         string fileName = filePathLoading;
+         string fileName = fileWeights;
          ifstream file;
          file.open(fileName);
 
@@ -606,7 +589,7 @@ struct NeuralNetwork
          } // for (J = 0; J < numHiddenActivations; J++)
 
          outfile.close();
-      } // if (saveWeights)
+      } // if (savingWeights)
 
       trainingTime = double(time(&dummyEnd) - dummyStart);
 
@@ -705,3 +688,82 @@ int main(int argc, char *argv[])
 
    return 0;
 } // int main(int argc, char *argv[])
+
+
+
+
+/**
+ * This is the structure of the FileReader, which contains the following methods:
+ *    FileReader(string file) - Constructor for the FileReader, which accepts a file path
+ *    readData() - Reads the data from the file and populates the arrays in the network
+ */
+struct FileReader
+{
+   ifstream file;
+
+   /**
+    * Constructor for the FileReader, which accepts a file path and opens the file
+    */
+   FileReader(string fileName)
+   {
+      file.open(fileName);
+      if (!file.is_open())
+      {
+         std::cerr << "Couldn't open config file for reading.\n";
+      }
+      return;
+   } // FileReader(string fileName)
+
+   /**
+    * Reads the next line from the file and returns the value of the line after the "=" and before the ";"
+    */
+   string readNextLine()
+   {
+      string line;
+      bool notAtLine = true;
+      string value;
+
+      while(notAtLine)
+      {
+         getline(file, line);
+         if (!(line[0] == '_' || line.empty()))
+         {
+            notAtLine = false;
+            auto delimiterPos = line.find('=');
+            auto delimiterEnd = line.find(';');
+            auto name = line.substr(0, delimiterPos);
+            value = line.substr(delimiterPos + 1, delimiterEnd - delimiterPos - 1);
+         } // if (!(line[0] == '_' || line.empty()))
+      } // while(notAtLine)
+      return value;
+   } // string readNextLine()
+
+   /**
+    * Closes the file
+    */
+   void closeFile()
+   {
+      file.close();
+      /*
+      *numInputActivations = stoi(reader->readNextLine());
+      numHiddenActivations = stoi(reader->readNextLine());
+      numOutputActivations = stoi(reader->readNextLine());
+      numCases = stoi(reader->readNextLine());
+      maxIterations = stoi(reader->readNextLine());
+      lambda = stod(reader->readNextLine());
+      randMin = stod(reader->readNextLine());
+      randMax = stod(reader->readNextLine());
+      errorThreshold = stod(reader->readNextLine());
+      training = stob(reader->readNextLine());
+      randomize = stob(reader->readNextLine());
+      savingWeights = stob(reader->readNextLine());
+      fileWeights = (reader->readNextLine());
+      trainingFile = (reader->readNextLine());
+      trainingAnswersFile = (reader->readNextLine());
+      testingFile = (reader->readNextLine());
+      reader->closeFile();
+      delete reader;
+      */
+      return;
+   } // void closeFile()
+}; // struct FileReader

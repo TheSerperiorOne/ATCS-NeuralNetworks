@@ -152,7 +152,7 @@ struct NeuralNetwork
    double* weights0J;            // Weights between the Input Layer and the Hidden Layers
    double** weightsJK;           // Weights between the Hidden Layers and the Output Layer
    double** trainData;           // Training Data (Inputs)
-   double* trainAnswers;         // Training Answers (Expected Outputs)
+   double* trainAnswers;         // TrainingAnswers.txt (Expected Outputs)
    double* thetaJ;               // Values used for calculating the hidden nodes - dot product of activations and  weights
    double* thetaI;               // Values used for calculating the Output - dot product of hidden layers and corresponding weights
    double** testData;            // Test Data (Inputs)
@@ -317,7 +317,7 @@ struct NeuralNetwork
          trainData[3][0] = 1.0;
          trainData[3][1] = 1.0;
 
-         trainAnswers[0] = 0.0; // Initializing Training Answers
+         trainAnswers[0] = 0.0; // Initializing TrainingAnswers.txt
          trainAnswers[1] = 1.0;
          trainAnswers[2] = 1.0;
          trainAnswers[3] = 0.0;
