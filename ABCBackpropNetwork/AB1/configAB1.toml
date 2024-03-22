@@ -1,17 +1,19 @@
 #Network Configuration
-numInputActivations = 2     # Number of input activations
-numHiddenActivations = 5    # Number of hidden activations
-numOutputActivations = 1    # Number of output activations
-weightsConfiguration = 0    # 0 for random, 1 for file, 2 for manual
+numInputActivations = 2                  # Number of input activations
+numHiddenActivations = 20                # Number of hidden activations
+numOutputActivations = 1                 # Number of output activations
+weightsConfiguration = 0                 # 0 for random, 1 for file, 2 for manual
+outputPrecision = 17                     # Number of decimal places to round output to
+activationFunction = "sigmoid"           # 0 for sigmoid, 1 for linear
 
 #Training Configuration
 training = true             # true for training and running, false for just running
 numCases = 4                # Number of cases in the training data
 maxIterations = 100000      # Maximum number of iterations
 lambda = 0.3                # Learning rate
-randMin = 0.1               # Minimum random weight
-randMax = 0.5               # Maximum random weight
-errorThreshold = 0.00002    # Error threshold
+randMin = -1.5              # Minimum random weight
+randMax = 1.5               # Maximum random weight
+errorThreshold = 0.0002     # Error threshold
 savingWeights = false       # true for saving weights to file, false for not saving
 
 #File Configuration
