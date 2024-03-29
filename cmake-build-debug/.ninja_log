@@ -1,22 +1,4 @@
 # ninja log v5
-5	2687	1710886384494890822	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2689	2752	1710886384571028770	ATCS_Neural_Networks	fd9cde465a11854a
-3	230	1710907329713167890	build.ninja	f769ed1ed9612c36
-7	2655	1710907345987697752	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2660	4427	1710907347779135775	ATCS_Neural_Networks	fd9cde465a11854a
-4	2714	1710907431180610073	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2719	2788	1710907431272176617	ATCS_Neural_Networks	fd9cde465a11854a
-8	2820	1710952667922472780	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2822	2918	1710952668032176651	ATCS_Neural_Networks	fd9cde465a11854a
-8	2771	1710952681353163642	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2773	2844	1710952681436937144	ATCS_Neural_Networks	fd9cde465a11854a
-11	2741	1710953803748365644	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2743	2814	1710953803838383914	ATCS_Neural_Networks	fd9cde465a11854a
-9	2725	1710954165106484661	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2727	2791	1710954165185460503	ATCS_Neural_Networks	fd9cde465a11854a
-12	2794	1710954409570901071	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2796	2861	1710954409649795975	ATCS_Neural_Networks	fd9cde465a11854a
-5	2772	1710955116921536240	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
-2773	2839	1710955116999601851	ATCS_Neural_Networks	fd9cde465a11854a
-19	3063	1711039553067578349	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce
+11	194	1711475352509728659	build.ninja	f769ed1ed9612c36
 3064	3307	1711039553325271905	ATCS_Neural_Networks	fd9cde465a11854a
+19	3063	1711039553067578349	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce

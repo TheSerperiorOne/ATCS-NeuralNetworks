@@ -49,12 +49,12 @@ cmake_ninja_workdir = /Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/cmak
 
 build cmake_object_order_depends_target_ATCS_Neural_Networks: phony || CMakeFiles/ATCS_Neural_Networks.dir
 
-build CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o: CXX_COMPILER__ATCS_Neural_Networks_unscanned_Debug /Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCBackpropNetwork/ABCBackPropagation.cpp || cmake_object_order_depends_target_ATCS_Neural_Networks
-  DEP_FILE = CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o.d
+build CMakeFiles/ATCS_Neural_Networks.dir/ABCD2LayerNetwork/ABCDNetwork.cpp.o: CXX_COMPILER__ATCS_Neural_Networks_unscanned_Debug /Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCD2LayerNetwork/ABCDNetwork.cpp || cmake_object_order_depends_target_ATCS_Neural_Networks
+  DEP_FILE = CMakeFiles/ATCS_Neural_Networks.dir/ABCD2LayerNetwork/ABCDNetwork.cpp.o.d
   FLAGS = -std=c++20 -fexperimental-library -stdlib=libc++ -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -fcolor-diagnostics -Og -g3 -glldb -Wall -Wextra -fsanitize=address -fno-omit-frame-pointer
   INCLUDES = -I/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCBackpropNetwork -I/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCBackpropNetwork/tomlplusplus/include
   OBJECT_DIR = CMakeFiles/ATCS_Neural_Networks.dir
-  OBJECT_FILE_DIR = CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork
+  OBJECT_FILE_DIR = CMakeFiles/ATCS_Neural_Networks.dir/ABCD2LayerNetwork
 
 
 # =============================================================================
@@ -64,7 +64,7 @@ build CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.
 #############################################
 # Link the executable ATCS_Neural_Networks
 
-build ATCS_Neural_Networks: CXX_EXECUTABLE_LINKER__ATCS_Neural_Networks_Debug CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o
+build ATCS_Neural_Networks: CXX_EXECUTABLE_LINKER__ATCS_Neural_Networks_Debug CMakeFiles/ATCS_Neural_Networks.dir/ABCD2LayerNetwork/ABCDNetwork.cpp.o
   FLAGS = -std=c++20 -fexperimental-library -stdlib=libc++ -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk
   LINK_FLAGS = -Og -g3 -glldb -Wall -Wextra -fsanitize=address -fno-omit-frame-pointer
   OBJECT_DIR = CMakeFiles/ATCS_Neural_Networks.dir
