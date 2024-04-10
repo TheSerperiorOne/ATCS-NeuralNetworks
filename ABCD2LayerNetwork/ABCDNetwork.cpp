@@ -1,14 +1,39 @@
 /*
  * Author: Varun Thvar
  * Date of Creation: 25 March 2023
- * Description: This is an implementation of a simple trainable A-B-C-D Network
- *              designed for OR, AND, and XOR, all at the same time. This network incorporates the
- *              backprogation algorithm to minimize the error by adjusting the weights by the
- *              derivative of the Error function and has 2 hidden layers.
+ * Description: This is an implementation of a simple trainable A-B-C-D Network. This network incorporates the
+ *              backpropagation algorithm to minimize the error by adjusting the weights by the
+ *              derivative of the Error function and has 2 hidden layers. This version uses generalized notation,
+ *              but is only configured for a ABCD network.
  *
  * TOML: This file uses the TOML++ Library written by Mark Gillard to parse the configuration file, a .toml file.
  *       The code to execute this via terminal is "g++ -I tomlplusplus/include -std=c++20 ABCDNetwork.cpp", and
  *       the user has to have the tomlplusplus library in the same directory as the file.
+ *
+ * Table of Contents:
+ *    1. double linear(double value)
+ *    2. double linearPrime(double value)
+ *    3. double sigmoid(double value)
+ *    4. double sigmoidPrime(double value)
+ *    5. void printTime(double seconds)
+ *    6. struct NeuralNetwork
+ *       6.1 double randomValue()
+ *       6.2 void setConfigurationParameters()
+ *       6.3 void printNetworkConfig()
+ *       6.4 string networkConfig()
+ *       6.5 void echoConfigurationParameters()
+ *       6.6 void allocateArrayMemory()
+ *       6.7 void populateArrays()
+ *       6.8 void loadWeights()
+ *       6.9 void initializeTestingData()
+ *      6.10 void initializeTrainingData()
+ *      6.11 void initializeTrainingAnswers()
+ *      6.12 void checkNetwork()
+ *      6.13 double* run(double *inputValues)
+ *      6.14 double* runTrain(double *inputValues, double *answers)
+ *      6.15 void train()
+ *      6.16 void saveWeights()
+ *    7. int main()
  */
 
 #include <iostream>
@@ -21,13 +46,17 @@
 #define HOURS_IN_DAY                       ((double) 24.0)
 #define DAYS_IN_WEEK                       ((double) 7.0)
 #define DEFAULT_CONFIG_FILE                "config.toml"       // Has to be in the same directory as the executable
+#define INPUT_LAYER                        0
 #define HIDDEN_LAYER_1                     1
 #define HIDDEN_LAYER_2                     2
+#define OUTPUT_LAYER                       3
+#define RANDOMIZE_WEIGHTS                  0
+#define LOAD_WEIGHTS                       1
+
 
 using namespace std;
 
 string configFilePath = DEFAULT_CONFIG_FILE;
-enum activationFunctionType {LINEAR, SIGMOID};
 
 /**
  * Implements the linear function, which is defined by
@@ -112,84 +141,51 @@ void printTime(double seconds)
 } // void printTime(double seconds)
 
 /**
- * This is the structure of the Neural Network, which contains the following methods:
- *   randomValue() - Outputs a random value based on the range as given in the configuration parameters
- *   setConfigurationParameters() - Sets the configuration parameters for the network based on the following parameters
- *   echoConfigurationParameters() - Outputs the configuration parameters for the network
- *   allocateArrayMemory() - Allocates memory for the activations, hidden nodes, and weights of the network
- *   populateArrays() - Populates the arrays with random values, unless the network is a 2-2-1 network, in which
- *          it manually overrides
- *   loadWeights() - Loads the weights from the fileWeights file
- *   initializeTestingData() - Initializes the testing data based on the testing file
- *   initializeTrainingData() - Initializes the training data based on the training file
- *   initalizeTrainingAnswers() - Initializes the training answers based on the training answers file
- *   saveWeights() - Saves the weights to a file, which is called "WeightsI" + n x "I", where n is the number of files
- *       already created. It adds the configuration of the network to the first line of the file, and then adds the
- *       weights to the file.
- *   checkNetwork() - Outputs the Network Type, Lambda Value, Error Threshold, Maximum Number of Iterations,
- *          and the Random Number Range
- *   train() - Trains the network using training data. The training is done using the gradient
- *          descent algorithm, which is used to minimize the error by adjusting the weights derivative of the error
- *          with respect to the weights
- *   run() - Runs the network using  test data. Each node is calculated using the defined activation function
- *          applied onto a dot product of the weights and the activations
- *   runTrain() - Runs the network ONLY DURING TRAINING using predetermined test data. Each node is calculated
- *          using the specificed activation function applied onto a dot product of the weights and the activations.
- *   printArray() - Prints array in a sequence for the purposes of reporting results after running
- *   reportResults() - Reports the results of the training or running of the network, depending on the mode
- *          the network is in training mode or not
+ * This is the structure of the Neural Network that is used to store the configuration parameters, the arrays
+ *   for the network, and the relevant information for training and running the network.
+ *   The structure also contains functions to set the configuration parameters, allocate memory for the arrays,
+ *   populate the arrays, load the weights, initialize the training data, training answers, and testing data,
+ *   run the network, run the network during training, train the network, and save the weights.
  *
  */
 struct NeuralNetwork
 {
-   /**
-    * Configuration Parameters for the Network, such as the network configuration, number of cases, learning rate,
-    *    error threshold, maximum number of iterations, random value range, and whether the network is in training mode.
-    */
-   int numOutputActivations;     // Number of Output Activations
-   int numInputActivations;      // Number of Input Activations
-   int* numHiddenActivations;    // Number of Hidden Nodes in each Hidden Layer
-   int numHiddenLayers;          // Number of Hidden Layers
+/**
+ * Configuration Parameters for the Network, such as the network configuration, number of cases, learning rate,
+ *    error threshold, maximum number of iterations, random value range, and whether the network is in training mode.
+ */
    int numLayers;                // Number of Layers
-   int* LayerConfiguration;       // Configuration of the Layers
+   int* LayerConfiguration;      // Configuration of the Layers
    double lambda;                // Learning Rate
    double errorThreshold;        // Threshold for the error to reach during training
    int maxIterations;            // Maximum number of iterations during training
    double randMin;               // Minimum value of the random value assigned to weights
    double randMax;               // Maximum value of the random value assigned to weights
-   bool training;                // Whether or not the network is in training mode (true) or running mode
+   bool training;                // Whether the network is in training mode (true) or running mode (false)
    int outputPrecision;          // Precision of the output values
 
-   /**
-    * Activation Function and its Derivative, which are used to calculate the hidden nodes and the output nodes
-    */
+/**
+ * Activation Function and its Derivative, which are used to calculate the hidden nodes and the output nodes
+ */
    double (*activationFunction) (double value);             // Activation Function
    double (*activationFunctionDerivative) (double value);   // Derivative of the Activation Function
 
-   /**
-    * Arrays for the Network, including layers, weights, and training data,
-    *    and backpropagation-relevant arrays such as thetaJ, and lowerPsi
-    */
-
+/**
+ * Arrays for the Network, including layers, weights, and training data,
+ *    and backpropagation-relevant arrays such as thetaJ, and lowerPsi
+ */
    double** a;                   // Array for Layers Activations
    double*** weights;            // Weights between the Layers
-
-   double** h;                   // Array for Hidden Activations
-   double* F;                    // Output Value
-   double** weightsIJ;           // Weights between the Input Layer and the Hidden Layers
-   double** weightsJK;           // Weights between the first and second Hidden Layers
-   double** weightsKM;           // Weights between the Hidden Layers and the Output Layer
-   double* thetaJ;               // Values used to calculating the hidden nodes - dot product of inputs and weights
-   double* thetaK;               // Values used to calculating the hidden nodes - dot product of inputs and weights
-   double* lowerPsi;             // Value of lowerOmega multiplied by the derivative of the activation function function
+   double** theta;               // Values used to calculating the hidden nodes - dot product of inputs and weights
+   double** psi;                 // Value of used for training
    double** trainData;           // Training Data (Inputs)
    double** trainAnswers;        // TrainingAnswers.txt (Expected Outputs)
    double** testData;            // Test Data (Inputs)
 
-   /**
-    * Relevant Information for Training and Running the Network, for the purposes of reporting results,
-    *    or checking efficacy of the network
-    */
+/**
+ * Relevant Information for Training and Running the Network, for the purposes of reporting results,
+ *    or checking efficacy of the network
+ */
    int numCases;                 // Number of Test Cases
    int trainingTime;             // Time taken for training the network
    double runningTime;           // Time taken for running the network
@@ -203,42 +199,50 @@ struct NeuralNetwork
    string trainingAnswersFile;   // File path for the training answers
    string testingFile;           // File path for the testing data
 
-   /**
-    * Outputs a random value based on the range as given in the configuration parameters
-    */
+/**
+ * Outputs a random value based on the range as given in the configuration parameters
+ */
    double randomValue()
    {
       return ((double) rand() / (RAND_MAX)) * (randMax - randMin) + randMin;
    } // double randomValue()
 
-   /**
-    * Sets the configuration parameters for the network using TOML++ Library
-    */
+/**
+ * Sets the configuration parameters for the network using TOML++ Library
+ */
    void setConfigurationParameters()
    {
       auto config = toml::parse_file(configFilePath);
       toml::array arr = *config.get_as<toml::array>("LayerConfiguration");
-      LayerConfiguration = new int[numLayers];
+
+      numLayers = arr.size();
+
+      LayerConfiguration = new int[arr.size()];
       for (int index = 0; index < numLayers; ++index)
       {
          LayerConfiguration[index] = *arr[index].value<int>();
-      } // for (int index = 0; index < numHiddenLayers; ++index)
-
-      weightsConfiguration = *(config.get(stringify(weightsConfiguration))->value<int>());
-      outputPrecision = *(config.get(stringify(outputPrecision))->value<int>());
+      } // for (int index = 0; index < numLayers; ++index)
 
       string activationFunctionString = *(config.get(stringify(activationFunction))->value<string>());
       if (activationFunctionString == stringify(linear))
       {
          activationFunction = linear;
          activationFunctionDerivative = linearPrime;
-      } // if (activationFunctionString == "linear")
+      } // if (activationFunctionString == stringify(linear))
       else if (activationFunctionString == stringify(sigmoid))
       {
          activationFunction = sigmoid;
          activationFunctionDerivative = sigmoidPrime;
-      } // else if (activationFunctionString == "sigmoid")
+      } // else if (activationFunctionString == stringify(sigmoid))
+      else
+      {
+         cout << "Activation Function not recognized - Defaulting to Sigmoid" << endl;
+         activationFunction = sigmoid;
+         activationFunctionDerivative = sigmoidPrime;
+      } // else (activationFunctionString != stringify(linear) && activationFunctionString != stringify(sigmoid))
 
+      weightsConfiguration = *(config.get(stringify(weightsConfiguration))->value<int>());
+      outputPrecision = *(config.get(stringify(outputPrecision))->value<int>());
       training = *(config.get(stringify(training))->value<bool>());
       numCases = *(config.get(stringify(numCases))->value<int>());
       maxIterations = *(config.get(stringify(maxIterations))->value<int>());
@@ -257,16 +261,18 @@ struct NeuralNetwork
    } // void setConfigurationParameters()
 
 /**
- * Outputs the configuration parameters for the network to check if they are set correctly
+ * Outputs the configuration parameters for the network and returns it as a string
  */
-   void printNetworkConfig()
+   string networkConfig()
    {
-      cout << "Network Configuration:";
+      string networkConfig = "";
       for (int index = 0; index < numLayers; ++index)
       {
-         cout << "-" << LayerConfiguration[index];
-      } // for (int index = 0; index < numHiddenLayers; ++index)
-   } // void printNetworkConfig()
+         networkConfig += to_string(LayerConfiguration[index]);
+         if (index != numLayers - 1) networkConfig += "-";
+      } // for (int index = 0; index < numLayers; ++index)
+      return networkConfig;
+   } // string networkConfig()
 
 /**
  * Outputs the configuration parameters for the network to check if they are set correctly
@@ -274,12 +280,12 @@ struct NeuralNetwork
    void echoConfigurationParameters()
    {
       cout << endl << "Echoing Configuration Parameters:" << endl;
-      printNetworkConfig();
-      cout << endl;
+      cout << "   Network Configuration: " << networkConfig() << endl;
       cout << "   Input File: " << testingFile << endl;
       cout << "   Output Precision: " << outputPrecision << endl;
       cout << "   Activation Function: " << (activationFunction == linear ? "Linear" : "Sigmoid") << endl;
-      if (weightsConfiguration == 1) cout << "Weights File: " << fileWeights << endl;
+      if (weightsConfiguration == 1) cout << "   Weights File: " << fileWeights << endl;
+
       if (training)
       {
          cout << "   Training Parameters:" << endl;
@@ -308,69 +314,151 @@ struct NeuralNetwork
       int I, J, K, n;
 
       a = new double*[numLayers]; // Initializing input and hidden activations
-      for (n = 0; n < numLayers; ++n) a[n] = new double[LayerConfiguration[n]];
+      n = INPUT_LAYER;
+      a[n] = new double[LayerConfiguration[n]];
+      n = HIDDEN_LAYER_1;
+      a[n] = new double[LayerConfiguration[n]];
+      n = HIDDEN_LAYER_2;
+      a[n] = new double[LayerConfiguration[n]];
+      n = OUTPUT_LAYER;
+      a[n] = new double[LayerConfiguration[n]];
 
+      n = HIDDEN_LAYER_1;
       weights = new double**[numLayers]; // Initializing weights
-      for (n = 0; n < numLayers; ++n)
+      weights[n] = new double*[LayerConfiguration[n]];
+      for (K = 0; K < LayerConfiguration[n]; K++)
       {
-         weights[n] = new double*[LayerConfiguration[n]];
-         for (int k = 0; k < LayerConfiguration[n]; ++k)
-            weights[n][k] = new double[LayerConfiguration[n - 1]];
-      } // for (index = 0; index < numLayers; ++index)
+         weights[n][K] = new double[LayerConfiguration[n - 1]];
+      } // for (K = 0; K < LayerConfiguration[n]; K++)
+
+      n = HIDDEN_LAYER_2;
+      weights[n] = new double*[LayerConfiguration[n]];
+      for (J = 0; J < LayerConfiguration[n]; J++)
+      {
+         weights[n][J] = new double[LayerConfiguration[n - 1]];
+      } // for (J = 0; J < LayerConfiguration[n]; J++)
+
+      n = OUTPUT_LAYER;
+      weights[n] = new double*[LayerConfiguration[n]];
+      for (I = 0; I < LayerConfiguration[n]; I++)
+      {
+         weights[n][I] = new double[LayerConfiguration[n - 1]];
+      } // for (I = 0; I < LayerConfiguration[n]; I++)
 
       testData = new double*[numCases]; // Initializing Test Data
-      for (int index = 0; index < numCases; ++index) testData[index] = new double[numInputActivations];
+      for (int index = 0; index < numCases; ++index) testData[index] = new double[LayerConfiguration[INPUT_LAYER]];
 
-      if (training) // Initializing Training Data and Training Answers and ThetaJ and LowerPsi
+      if (training) // Initializing Training Data and Training Answers and ThetaJ, ThetaK, and LowerPsi
       {
-         thetaJ = new double[numHiddenActivations[HIDDEN_LAYER_2]];
-         thetaK = new double[numHiddenActivations[HIDDEN_LAYER_1]];
-         lowerPsi = new double[numOutputActivations];
+         theta = new double*[numLayers];
+         n = HIDDEN_LAYER_1;
+         theta[n] = new double[LayerConfiguration[n]];
+         n = HIDDEN_LAYER_2;
+         theta[n] = new double[LayerConfiguration[n]];
+         n = OUTPUT_LAYER;
+         theta[n] = new double[LayerConfiguration[n]];
+
+         psi = new double*[numLayers];
+         n = HIDDEN_LAYER_1;
+         psi[n] = new double[LayerConfiguration[n]];
+         n = HIDDEN_LAYER_2;
+         psi[n] = new double[LayerConfiguration[n]];
+         n = OUTPUT_LAYER;
+         psi[n] = new double[LayerConfiguration[n]];
 
          trainData = new double*[numCases]; // Initializing Training Data
-         for (int index = 0; index < numCases; ++index) trainData[index] = new double[numInputActivations];
+         n = INPUT_LAYER;
+         for (int index = 0; index < numCases; ++index) trainData[index] = new double[LayerConfiguration[n]];
          trainAnswers = new double*[numCases];
-         for (int index = 0; index < numCases; ++index) trainAnswers[index] = new double[numOutputActivations];
+         n = OUTPUT_LAYER;
+         for (int index = 0; index < numCases; ++index) trainAnswers[index] = new double[LayerConfiguration[n]];
       } // if (training)
       return;
-   } //void allocateArrayMemory()
+   } // void allocateArrayMemory()
 
 /**
  * IF RUNNING: Populates the weights with random values, unless the network is not in weightsConfiguration mode
- *    in which it manually loads the weights. All other arrays (inputs, hiddens, output) are auto set to 0.0.
+ *    in which it manually loads the weights. All other arrays are auto set to 0.0.
  *
  * IF TRAINING: Populates the weights with random values, unless the network is not in weightsConfiguration mode
- *     in which it manually loads the weights. All other arrays (inputs, hiddens, output, thetas) are set to 0.0.
+ *     in which it manually loads the weights. All other arrays are set to 0.0.
  */
    void populateArrays()
    {
-      int I, J, K, M, N;
+      int I, J, K, M, n;
 
-      if (weightsConfiguration == 0) // Randomizing Weights
+      if (weightsConfiguration == RANDOMIZE_WEIGHTS) // Randomizing Weights
       {
-\
-      else if (weightsConfiguration == 1) // Loading Weights
+         n = HIDDEN_LAYER_1;
+         for (M = 0; M < LayerConfiguration[n - 1]; M++)
+         {
+            for (K = 0; K < LayerConfiguration[n]; K++)
+            {
+               weights[n][K][M] = randomValue();
+            } // for (K = 0; K < LayerConfiguration[n]; K++)
+         } // for (M = 0; M < LayerConfiguration[n]; M++)
+
+         n = HIDDEN_LAYER_2;
+         for (K = 0; K < LayerConfiguration[n - 1]; K++)
+         {
+            for (J = 0; J < LayerConfiguration[n]; J++)
+            {
+               weights[n][J][K] = randomValue();
+            } // for (J = 0; J < LayerConfiguration[n]; J++)
+         } // for (K = 0; K < LayerConfiguration[n]; K++)
+
+         n = OUTPUT_LAYER;
+         for (J = 0; J < LayerConfiguration[n - 1]; J++)
+         {
+            for (I = 0; I < LayerConfiguration[n]; I++)
+            {
+               weights[n][I][J] = randomValue();
+            } // for (I = 0; I < LayerConfiguration[n]; I++)
+         } // for (J = 0; J < LayerConfiguration[n]; J++)
+      } // if (weightsConfiguration == 0)
+
+      else if (weightsConfiguration == LOAD_WEIGHTS) // Loading Weights
       {
          loadWeights();
       } // else if (weightsConfiguration == 1)
       else // Manually loading weights
       {
-         if (numInputActivations == 2 && numHiddenActivations[HIDDEN_LAYER_1] == 5 && numHiddenActivations[HIDDEN_LAYER_2] == 3
-            && numOutputActivations == 3)
+         if (LayerConfiguration[INPUT_LAYER] == 2 && LayerConfiguration[HIDDEN_LAYER_1] == 5 && LayerConfiguration[HIDDEN_LAYER_2] == 3
+            && LayerConfiguration[OUTPUT_LAYER] == 3)
          {
-            weightsIJ[0][0] = 0.0; weightsIJ[0][1] = 0.0; weightsIJ[0][2] = 0.0; weightsIJ[0][3] = 0.0; weightsIJ[0][4] = 0.0;
-            weightsIJ[1][0] = 0.0; weightsIJ[1][1] = 0.0; weightsIJ[1][2] = 0.0; weightsIJ[1][3] = 0.0; weightsIJ[1][4] = 0.0;
-            weightsIJ[2][0] = 0.0; weightsIJ[2][1] = 0.0; weightsIJ[2][2] = 0.0; weightsIJ[2][3] = 0.0; weightsIJ[2][4] = 0.0;
+            weights[HIDDEN_LAYER_1][0][0] = 0.1;
+            weights[HIDDEN_LAYER_1][0][1] = 0.2;
+            weights[HIDDEN_LAYER_1][1][0] = 0.3;
+            weights[HIDDEN_LAYER_1][1][1] = 0.4;
+            weights[HIDDEN_LAYER_1][2][0] = 0.5;
+            weights[HIDDEN_LAYER_1][2][1] = 0.6;
+            weights[HIDDEN_LAYER_1][3][0] = 0.7;
+            weights[HIDDEN_LAYER_1][3][1] = 0.8;
+            weights[HIDDEN_LAYER_1][4][0] = 0.9;
+            weights[HIDDEN_LAYER_1][4][1] = 1.0;
 
-            weightsJK[0][0] = 0.0; weightsJK[0][1] = 0.0; weightsJK[0][2] = 0.0; weightsJK[0][3] = 0.0; weightsJK[0][4] = 0.0;
-            weightsJK[1][0] = 0.0; weightsJK[1][1] = 0.0; weightsJK[1][2] = 0.0; weightsJK[1][3] = 0.0; weightsJK[1][4] = 0.0;
-            weightsJK[2][0] = 0.0; weightsJK[2][1] = 0.0; weightsJK[2][2] = 0.0; weightsJK[2][3] = 0.0; weightsJK[2][4] = 0.0;
+            weights[HIDDEN_LAYER_2][0][0] = 0.1;
+            weights[HIDDEN_LAYER_2][0][1] = 0.2;
+            weights[HIDDEN_LAYER_2][0][2] = 0.3;
+            weights[HIDDEN_LAYER_2][0][3] = 0.4;
+            weights[HIDDEN_LAYER_2][0][4] = 0.5;
 
-            weightsKM[0][0] = 0.0; weightsKM[0][1] = 0.0;
-            weightsKM[1][0] = 0.0; weightsKM[1][1] = 0.0;
-            weightsKM[2][0] = 0.0; weightsKM[2][1] = 0.0;
-            weightsKM[3][0] = 0.0; weightsKM[3][1] = 0.0;
-         } // if (numInputActivations ...
+            weights[HIDDEN_LAYER_2][1][0] = 0.6;
+            weights[HIDDEN_LAYER_2][1][1] = 0.7;
+            weights[HIDDEN_LAYER_2][1][2] = 0.8;
+            weights[HIDDEN_LAYER_2][1][3] = 0.9;
+            weights[HIDDEN_LAYER_2][1][4] = 1.0;
+
+            weights[HIDDEN_LAYER_2][2][0] = 1.1;
+            weights[HIDDEN_LAYER_2][2][1] = 1.2;
+            weights[HIDDEN_LAYER_2][2][2] = 1.3;
+            weights[HIDDEN_LAYER_2][2][3] = 1.4;
+            weights[HIDDEN_LAYER_2][2][4] = 1.5;
+
+            weights[OUTPUT_LAYER][0][0] = 0.1;
+            weights[OUTPUT_LAYER][0][1] = 0.2;
+            weights[OUTPUT_LAYER][0][2] = 0.3;
+         } // if (numInputActivations == 2...
          else
          {
             cout << "Manually set weights only available for 2-5-3 network. All weights set to default (0.0)" << endl;
@@ -380,7 +468,7 @@ struct NeuralNetwork
       if (training) // Populating Training Data and Training Answers
       {
          initializeTrainingData();
-         initalizeTrainingAnswers();
+         initializeTrainingAnswers();
       } // if (training)
       initializeTestingData(); // Populating Testing Data
       return;
@@ -392,10 +480,9 @@ struct NeuralNetwork
    void loadWeights()
    {
       ifstream file;
-      int I, J, K, M;
+      int I, J, K, M, n;
       file.open(fileWeights);
-      string configuration = to_string(numInputActivations) + "_" + to_string(numHiddenActivations[HIDDEN_LAYER_1]) + "_" +
-         to_string(numHiddenActivations[HIDDEN_LAYER_2]) + "_" + to_string(numOutputActivations);
+      string configuration = networkConfig();
 
       if (file.is_open())
       {
@@ -406,35 +493,38 @@ struct NeuralNetwork
             string valueString;
             double value;
 
-            for (M = 0; M < numHiddenActivations[HIDDEN_LAYER_1]; M++)
+            n = HIDDEN_LAYER_1;
+            for (M = 0; M < LayerConfiguration[n - 1]; M++)
             {
-               for (K = 0; K < numInputActivations; K++)
+               for (K = 0; K < LayerConfiguration[n]; K++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
-                  weightsKM[M][K] = value;
-               } // for (K = 0; K < numInputActivations; K++)
-            } // for (M = 0; M < numHiddenActivations[HIDDEN_LAYER_1]; M++
+                  weights[n][K][M] = value;
+               } // for (K = 0; K < LayerConfiguration[n]; K++)
+            } // for (M = 0; M < LayerConfiguration[n - 1]; M++)
 
-            for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; K++)
+            n = HIDDEN_LAYER_2;
+            for (K = 0; K < LayerConfiguration[n - 1]; K++)
             {
-               for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
+               for (J = 0; J < LayerConfiguration[n]; J++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
-                  weightsJK[J][K] = value;
-               } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
-            } // for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; K++)
+                  weights[n][J][K] = value;
+               } // for (J = 0; J < LayerConfiguration[n]; J++)
+            } // for (K = 0; K < LayerConfiguration[n - 1]; K++)
 
-            for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
+            n = OUTPUT_LAYER;
+            for (J = 0; J < LayerConfiguration[n - 1]; J++)
             {
-               for (I = 0; I < numOutputActivations; I++)
+               for (I = 0; I < LayerConfiguration[n]; I++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
-                  weightsIJ[I][J] = value;
-               } // for (I = 0; I < numOutputActivations; I++)
-            } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
+                  weights[n][I][J] = value;
+               } // for (I = 0; I < LayerConfiguration[n]; I++)
+            } // for (J = 0; J < LayerConfiguration[n - 1]; J++)
          } // if (firstLine == configuration)
          else // (firstLine != configuration)
          {
@@ -456,8 +546,9 @@ struct NeuralNetwork
    void initializeTestingData()
    {
       ifstream file (testingFile);
-      int caseNum, K;
-      string configuration = to_string(numInputActivations);
+      int caseNum, K, n;
+      n = INPUT_LAYER;
+      string configuration = to_string(LayerConfiguration[n]);
 
       if (file.is_open())
       {
@@ -470,12 +561,12 @@ struct NeuralNetwork
 
             for (caseNum = 0; caseNum < numCases; caseNum++)
             {
-               for (K = 0; K < numInputActivations; K++)
+               for (K = 0; K < LayerConfiguration[n]; K++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
                   testData[caseNum][K] = value;
-               } // for (K = 0; K < numInputActivations; K++)
+               } // for (K = 0; K < LayerConfiguration[n]; K++)
             } // for (caseNum = 0; caseNum < numCases; caseNum++)
          } // if (firstLine == configuration)
          else // (firstLine != configuration)
@@ -497,9 +588,10 @@ struct NeuralNetwork
    void initializeTrainingData()
    {
       ifstream file;
-      int caseNum, K;
+      int caseNum, K, n;
       file.open(trainingFile);
-      string configuration = to_string(numInputActivations);
+      n = INPUT_LAYER;
+      string configuration = to_string(LayerConfiguration[n]);
 
       if (file.is_open())
       {
@@ -509,17 +601,15 @@ struct NeuralNetwork
          {
             string valueString;
             double value;
-
             for (caseNum = 0; caseNum < numCases; caseNum++)
             {
-               for (K = 0; K < numInputActivations; K++)
+               for (K = 0; K < LayerConfiguration[n]; K++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
                   trainData[caseNum][K] = value;
-               } // for (K = 0; K < numInputActivations; K++)
-            } // for (D = 0; D < numCases; D++)
-
+               } // for (K = 0; K < LayerConfiguration[n]; K++)
+            } // for (caseNum = 0; caseNum < numCases; caseNum++)
          } // if (firstLine == configuration)
          else // (firstLine != configuration)
          {
@@ -539,12 +629,13 @@ struct NeuralNetwork
 /**
  * Initializes the training answers based on the training answers file
  */
-   void initalizeTrainingAnswers()
+   void initializeTrainingAnswers()
    {
       ifstream file;
-      int caseNum, I;
+      int caseNum, I, n;
       file.open(trainingAnswersFile);
-      string configuration = to_string(numOutputActivations);
+      n = OUTPUT_LAYER;
+      string configuration = to_string(LayerConfiguration[n]);
 
       if (file.is_open())
       {
@@ -557,13 +648,13 @@ struct NeuralNetwork
 
             for (caseNum = 0; caseNum < numCases; caseNum++)
             {
-               for (I = 0; I < numOutputActivations; I++)
+               for (I = 0; I < LayerConfiguration[n]; I++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
                   trainAnswers[caseNum][I] = value;
-               } // for (K = 0; K < numInputActivations; K++)
-            } // for (D = 0; D < numCases; D++)
+               } // for (I = 0; I < LayerConfiguration[n]; I++)
+            } // for (caseNum = 0; caseNum < numCases; caseNum++)
          } // if (firstLine == configuration)
          else // (firstLine != configuration)
          {
@@ -578,7 +669,7 @@ struct NeuralNetwork
          cout << "Error - Cannot Open File for Training Answers" << endl;
       } // else (!file.is_open())
       return;
-   } // void initalizeTrainingAnswers()
+   } // void initializeTrainingAnswers()
 
 /**
  * Outputs the Network Type, Lambda Value, Error Threshold, Maximum Number of Iterations,
@@ -589,8 +680,7 @@ struct NeuralNetwork
       if (training)
       {
          cout << "Training the Network:" << endl;
-         cout << "   " << "Network Type: " << numInputActivations << "-" << numHiddenActivations[HIDDEN_LAYER_1] << "-" <<
-            numHiddenActivations[HIDDEN_LAYER_2] << "-" << numOutputActivations << endl;
+         cout << "   " << "Network Type: " << networkConfig() << endl;
          cout << "   " << "Lambda Value: " << lambda << endl;
          cout << "   " << "Error Threshold: " << errorThreshold << endl;
          cout << "   " << "Maximum Number of Iterations: " << maxIterations << endl;
@@ -600,8 +690,7 @@ struct NeuralNetwork
       } // if (training)
       else
       {
-         cout << "Running with Network Type: " << numInputActivations << "-" << numHiddenActivations[HIDDEN_LAYER_1] << "-" <<
-            numHiddenActivations[HIDDEN_LAYER_2] << "-" << numOutputActivations << endl;
+         cout << "Running with Network Type: " << networkConfig() << endl;
       } // else (!training)
       return;
    } //void checkNetwork()
@@ -614,93 +703,100 @@ struct NeuralNetwork
    double* run(double *inputValues)
    {
       time_t dummyStart, dummyEnd;
-      int I, J, K, M;
-      double thetaJ, thetaI, thetaK;
-
+      int I, J, K, M, n;
+      double theta;
       time(&dummyStart);
 
-      a = inputValues;
+      n = INPUT_LAYER;
+      a[n] = inputValues;
 
-      for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
+      n = HIDDEN_LAYER_1;
+      for (K = 0; K < LayerConfiguration[n]; ++K)
       {
-         thetaK = 0.0;
-         for (M = 0; M < numInputActivations; ++M)
+         theta = 0.0;
+         for (M = 0; M < LayerConfiguration[n - 1]; ++M)
          {
-            thetaK += a[M] * weightsKM[K][M];
-         } // for (M = 0; M < numInputActivations; ++M)
-         h[HIDDEN_LAYER_1][K] = activationFunction(thetaK);
-      }
+            theta += a[n - 1][M] * weights[n][K][M];
+         } // for (M = 0; M < LayerConfiguration[n - 1]; ++M)
+         a[n][K] = activationFunction(theta);
+      } // for (K = 0; K < LayerConfiguration[n]; ++K)
 
-      for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+      n = HIDDEN_LAYER_2;
+      for (J = 0; J < LayerConfiguration[n]; ++J)
       {
-         thetaJ = 0.0;
-         for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
+         theta = 0.0;
+         for (K = 0; K < LayerConfiguration[n - 1]; ++K)
          {
-            thetaJ += a[K] * weightsJK[J][K];
-         } // for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
-         h[HIDDEN_LAYER_2][J] = activationFunction(thetaJ);
-      } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+            theta += a[n - 1][K] * weights[n][J][K];
+         } // for (K = 0; K < LayerConfiguration[n - 1]; ++K)
+         a[n][J] = activationFunction(theta);
+      } // for (J = 0; J < LayerConfiguration[n]; ++J)
 
-      for (I = 0; I < numOutputActivations; ++I)
+      n = OUTPUT_LAYER;
+      for (I = 0; I < LayerConfiguration[n]; ++I)
       {
-         thetaI = 0.0;
-         for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+         theta = 0.0;
+         for (J = 0; J < LayerConfiguration[n - 1]; ++J)
          {
-            thetaI += h[HIDDEN_LAYER_2][J] * weightsIJ[I][J];
-         } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
-         F[I] = activationFunction(thetaI);
-      } // for (I = 0; I < numOutputActivations; ++I)
+            theta += a[n - 1][J] * weights[n][I][J];
+         } // for (J = 0; J < LayerConfiguration[n - 1]; ++J)
+         a[n][I] = activationFunction(theta);
+      } // for (I = 0; I < LayerConfiguration[n]; ++I)
 
       time(&dummyEnd);
       runningTime = double(dummyEnd - dummyStart);
-      return F;
+      return a[n];
    } // double run(double *inputValues)
 
 /**
  * Runs the network ONLY DURING TRAINING using predetermined test data. Each node is calculated using
  *    the activation function function applied onto a dot product of the weights and the activations.
  */
-   double* runTrain(double *inputValues, double *answersArray)
+   double* runTrain(double *inputValues, double *answers)
    {
-      int I, J, K, M;
-      double thetaI, lowerOmega;
+      int I, J, K, M, n;
+      double lowerOmega;
 
-      a = inputValues;
+      n = INPUT_LAYER;
+      a[n] = inputValues;
 
-      for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
+      n = HIDDEN_LAYER_1;
+      for (K = 0; K < LayerConfiguration[n]; ++K)
       {
-         thetaK[K] = 0.0;
-         for (M = 0; M < numInputActivations; ++M)
+         theta[n][K] = 0.0;
+         for (M = 0; M < LayerConfiguration[n - 1]; ++M)
          {
-            thetaK[K] += a[M] * weightsKM[K][M];
-         } // for (M = 0; M < numInputActivations; ++M)
-         h[HIDDEN_LAYER_1][K] = activationFunction(thetaK[K]);
-      }
+            theta[n][K] += a[n - 1][M] * weights[n][K][M];
+         } // for (M = 0; M < LayerConfiguration[n - 1]; ++M)
+         a[n][K] = activationFunction(theta[n][K]);
+      } // for (K = 0; K < LayerConfiguration[n]; ++K)
 
-      for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+      n = HIDDEN_LAYER_2;
+      for (J = 0; J < LayerConfiguration[n]; ++J)
       {
-         thetaJ[J] = 0.0;
-         for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
+         theta[n][J] = 0.0;
+         for (K = 0; K < LayerConfiguration[n - 1]; ++K)
          {
-            thetaJ[J] += a[K] * weightsJK[J][K];
-         } // for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
-         h[HIDDEN_LAYER_2][J] = activationFunction(thetaJ[J]);
-      } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+            theta[n][J] += a[n - 1][K] * weights[n][J][K];
+         } // for (K = 0; K < LayerConfiguration[n - 1]; ++K)
+         a[n][J] = activationFunction(theta[n][J]);
+      } // for (J = 0; J < LayerConfiguration[n]; ++J)
 
-      for (I = 0; I < numOutputActivations; ++I)
+      n = OUTPUT_LAYER;
+      for (I = 0; I < LayerConfiguration[n]; ++I)
       {
-         thetaI = 0.0;
-         for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+         theta[n][I] = 0.0;
+         for (J = 0; J < LayerConfiguration[n - 1]; ++J)
          {
-            thetaI += h[HIDDEN_LAYER_2][J] * weightsIJ[I][J];
-         } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
-         F[I] = activationFunction(thetaI);
-         lowerOmega = answersArray[I] - F[I];
-         lowerPsi[I] = lowerOmega * activationFunctionDerivative(thetaI);
-      } // for (I = 0; I < numOutputActivations; ++I)
+            theta[n][I] += a[n - 1][J] * weights[n][I][J];
+         } // for (J = 0; J < LayerConfiguration[n - 1]; ++J)
+         a[n][I] = activationFunction(theta[n][I]);
+         lowerOmega = answers[I] - a[n][I];
+         psi[n][I] = lowerOmega * activationFunctionDerivative(theta[n][I]);
+      } // for (I = 0; I < LayerConfiguration[n]; ++I)
 
-      return F;
-   } // double runTrain(double *inputValues)
+      return a[n];
+   } // double runTrain(double *inputValues, double *answers)
 
 /**
  * Trains the network using predetermined training data using the gradient descent algorithm, which is used to
@@ -710,15 +806,11 @@ struct NeuralNetwork
    void train()
    {
       time_t dummyStart, dummyEnd;
-      int I, J, K, M, caseNum;
-      double capitalOmegaJ, capitalOmegaK, lowerOmega, *capitalPsiJ, *capitalPsiK, *testingArray, *answersArray;
+      int I, J, K, M, caseNum, n;
+      double omega, *testingArray, *answersArray;
 
       time(&dummyStart);
-      capitalPsiJ = new double[numHiddenActivations[HIDDEN_LAYER_2]];
-      capitalPsiK = new double[numHiddenActivations[HIDDEN_LAYER_1]];
       errorReached = DBL_MAX;
-
-      checkNetwork();
 
       while (iterations < maxIterations && errorReached > errorThreshold)
       {
@@ -730,39 +822,46 @@ struct NeuralNetwork
 
             runTrain(testingArray, answersArray);
 
-            for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+            n = OUTPUT_LAYER;
+            for (J = 0; J < LayerConfiguration[n - 1]; ++J)
             {
-               capitalOmegaJ = 0.0;
-               for (I = 0; I < numOutputActivations; ++I)
+               omega = 0.0;
+               for (I = 0; I < LayerConfiguration[n]; ++I)
                {
-                  capitalOmegaJ += lowerPsi[I] * weightsIJ[I][J];
-                  weightsIJ[I][J] += lambda * h[HIDDEN_LAYER_2][J] * lowerPsi[I];
-               } // for (I = 0; I < numOutputActivations; ++I)
-               capitalPsiJ[J] = capitalOmegaJ * activationFunctionDerivative(thetaJ[J]);
-            } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+                  omega += psi[n][I] * weights[n][I][J];
+                  weights[n][I][J] += lambda * a[n - 1][J] * psi[n][I];
+               } // for (I = 0; I < LayerConfiguration[n]; ++I)
+               psi[n - 1][J] = omega * activationFunctionDerivative(theta[n - 1][J]);
+            } // for (J = 0; J < LayerConfiguration[n - 1]; ++J)
 
-            for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
+            n = HIDDEN_LAYER_2;
+            for (K = 0; K < LayerConfiguration[n - 1]; ++K)
             {
-               capitalOmegaK = 0.0;
-               for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+               omega = 0.0;
+               for (J = 0; J < LayerConfiguration[n]; ++J)
                {
-                  capitalOmegaK += capitalPsiJ[J] * weightsJK[J][K];
-                  weightsJK[J][K] += lambda * h[HIDDEN_LAYER_1][K] * capitalPsiJ[J];
-               } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; ++J)
+                  omega += psi[n][J] * weights[n][J][K];
+                  weights[n][J][K] += lambda * a[n - 1][K] * psi[n][J];
+               } // for (J = 0; J < LayerConfiguration[n]; ++J)
 
-               capitalPsiK[K] = capitalOmegaK * activationFunctionDerivative(thetaK[K]);
-               for (M = 0; M < numInputActivations; ++M)
+               n = HIDDEN_LAYER_1;
+
+               psi[n][K] = omega * activationFunctionDerivative(theta[n][K]);
+
+               for (M = 0; M < LayerConfiguration[n - 1]; ++M)
                {
-                  weightsKM[K][M] += lambda * a[M] * capitalPsiK[K];
-               } // for (M = 0; M < numInputActivations; ++M)
-            } // for (K < 0; K < numHiddenActivations[HIDDEN_LAYER_1]; ++K)
+                  weights[n][K][M] += lambda * a[n - 1][M] * psi[n][K];
+               } // for (M = 0; M < LayerConfiguration[n - 1]; ++M)
+               n = HIDDEN_LAYER_2;
+            } // for (K = 0; K < LayerConfiguration[n - 1]; ++K)
 
+            n = OUTPUT_LAYER;
             run(testingArray);
-            for (I = 0; I < numOutputActivations; ++I)
+            for (I = 0; I < LayerConfiguration[n]; ++I)
             {
-               lowerOmega = answersArray[I] - F[I];
-               errorReached += 0.5 * lowerOmega * lowerOmega;
-            } // for (I = 0; I < numOutputActivations; ++I)
+               omega = answersArray[I] - a[n][I];
+               errorReached += 0.5 * omega * omega;
+            } // for (I = 0; I < LayerConfiguration[n]; ++I)
          } // for (caseNum = 0; caseNum < numCases; ++caseNum)
 
          errorReached /= ((double) numCases);
@@ -781,7 +880,7 @@ struct NeuralNetwork
    {
       ifstream file;
       string str;
-      int I, J, K, M;
+      int I, J, K, M, n;
       string fileName = saveWeightsFile;
 
       file.open(fileName);
@@ -795,32 +894,34 @@ struct NeuralNetwork
 
       ofstream outfile(fileName);
 
-      outfile << to_string(numInputActivations) << "-" << to_string(numHiddenActivations[HIDDEN_LAYER_1]) << "-" <<
-            to_string(numHiddenActivations[HIDDEN_LAYER_2]) << "-" << to_string(numOutputActivations) << endl;
+      outfile << networkConfig() << endl;
 
-      for (M = 0; M < numInputActivations; M++)
+      n = HIDDEN_LAYER_1;
+      for (M = 0; M < LayerConfiguration[n - 1]; M++)
       {
-         for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; K++)
+         for (K = 0; K < LayerConfiguration[n]; K++)
          {
-            outfile << fixed << setprecision(outputPrecision) << weightsKM[K][M] << endl;
-         } // for (K = 0; K < numInputActivations; K++)
-      } // for (M = 0; M < numInputActivations; M++)
+            outfile << fixed << setprecision(outputPrecision) << weights[n][K][M] << endl;
+         } // for (K = 0; K < LayerConfiguration[n]; K++)
+      } // for (M = 0; M < LayerConfiguration[n - 1]; M++)
 
-      for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; K++)
+      n = HIDDEN_LAYER_2;
+      for (K = 0; K < LayerConfiguration[n - 1]; K++)
       {
-         for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
+         for (J = 0; J < LayerConfiguration[n]; J++)
          {
-            outfile << fixed << setprecision(outputPrecision) << weightsJK[J][K] << endl;
-         } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
-      } // for (K = 0; K < numHiddenActivations[HIDDEN_LAYER_1]; K++)
+            outfile << fixed << setprecision(outputPrecision) << weights[n][J][K] << endl;
+         } // for (J = 0; J < LayerConfiguration[n]; J++)
+      } // for (K = 0; K < LayerConfiguration[n - 1]; K++)
 
-      for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
+      n = OUTPUT_LAYER;
+      for (J = 0; J < LayerConfiguration[n - 1]; J++)
       {
-         for (I = 0; I < numOutputActivations; I++)
+         for (I = 0; I < LayerConfiguration[n]; I++)
          {
-            outfile << fixed << setprecision(outputPrecision) << weightsIJ[I][J] << endl;
-         } // for (I = 0; I < numOutputActivations; I++)
-      } // for (J = 0; J < numHiddenActivations[HIDDEN_LAYER_2]; J++)
+            outfile << fixed << setprecision(outputPrecision) << weights[n][I][J] << endl;
+         } // for (I = 0; I < LayerConfiguration[n]; I++)
+      } // for (J = 0; J < LayerConfiguration[n - 1]; J++)
 
       outfile.close();
       return;
@@ -828,7 +929,7 @@ struct NeuralNetwork
 
 /**
  * Prints array in a sequence for the purposes of reporting results after running. Follows the format
- *   value1, value2, value3, ... valueN
+ *   value1, value2, value3, ... valueN. Specifically for arrays of doubles
  */
    void printArray(double* arr, int length)
    {
@@ -868,11 +969,11 @@ struct NeuralNetwork
          cout << "Truth Table and Expected Outputs: " << endl;
          for (int index = 0; index < numCases; ++index)
          {
-            printArray(trainData[index], numInputActivations);
+            printArray(trainData[index], LayerConfiguration[INPUT_LAYER]);
             cout << " = ";
-            printArray(trainAnswers[index], numOutputActivations);
+            printArray(trainAnswers[index], LayerConfiguration[OUTPUT_LAYER]);
             cout << " -> ";
-            printArray(run(trainData[index]), numOutputActivations);
+            printArray(run(trainData[index]), LayerConfiguration[OUTPUT_LAYER]);
             cout << endl;
          } // for (int index = 0...
 
@@ -884,21 +985,24 @@ struct NeuralNetwork
 
 
 /**
- * Accepts input from the user and runs the network using the input values. SPECIFIC TO BOOLEAN ALGEBRA
+ * Runs the network using the given test data, and prints the output of the network. Used for testing purposes.
  */
-void testingData(NeuralNetwork* network)
+void runningAllTestingData(NeuralNetwork* network)
 {
+   int n;
    for (int index = 0; index < network->numCases; ++index)
    {
       network->checkNetwork();
       cout << "Running the Network with Test Data: ";
-      network->printArray(network->testData[index], network->numInputActivations);
+      n = INPUT_LAYER;
+      network->printArray(network->testData[index], network->LayerConfiguration[n]);
       cout << endl;
-      network->printArray(network->run(network->testData[index]),  network->numOutputActivations);
+      n = OUTPUT_LAYER;
+      network->printArray(network->run(network->testData[index]),network->LayerConfiguration[n]);
       cout << endl << endl;
-   } // for (int numOutputActivations = 0; numOutputActivations < 4; ++numOutputActivations)
+   } // for (int index = 0; index < network->numCases; ++index)
    return;
-} // void testingData(NeuralNetwork* network)
+} // void runningAllTestingData(NeuralNetwork* network)
 
 /**
  * Main function of the program - creates and configures the network, allocates and populates the arrays of the network,
@@ -912,7 +1016,7 @@ int main(int argc, char** argv)
    if (argc > 1) configFilePath = argv[1];
    cout << configFilePath << endl;
 
-   NeuralNetwork network; // Creating and Configurating the Network based on pre-determined constants and designs
+   NeuralNetwork network; // Creating and configuring the network based on pre-determined constants and designs
    network.setConfigurationParameters();
    network.echoConfigurationParameters();
    cout << endl;
@@ -923,17 +1027,20 @@ int main(int argc, char** argv)
 
    if (network.training) // Training the Network using predetermined training data
    {
+      network.checkNetwork();
       network.train();
       network.run(network.testData[0]);
       network.reportResults();
    } // if (network.training)
 
-   if (network.savingWeights) network.saveWeights();
+   if (network.savingWeights)
+   {
+      network.saveWeights();
+   } // if (network.savingWeights)
 
    if (!network.training) // Running the Network using test data
    {
-      testingData(&network);
-      network.reportResults();
+      runningAllTestingData(&network);
    } // if (!network.training)
    return 0;
 } // int main(int argc, char** argv)

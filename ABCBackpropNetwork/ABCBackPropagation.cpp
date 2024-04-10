@@ -520,7 +520,7 @@ struct NeuralNetwork
 /**
  * Initializes the training answers based on the training answers file
  */
-   void initalizeTrainingAnswers()
+   void initializeTrainingAnswers()
    {
       ifstream file;
       int caseNum, I;
@@ -828,7 +828,7 @@ struct NeuralNetwork
 /**
  * Accepts input from the user and runs the network using the input values. SPECIFIC TO BOOLEAN ALGEBRA
  */
-void testingData(NeuralNetwork* network)
+void runningAllTestingData(NeuralNetwork* network)
 {
    for (int index = 0; index < network->numCases; ++index)
    {

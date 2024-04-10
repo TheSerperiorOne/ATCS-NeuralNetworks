@@ -1,7 +1,7 @@
 #Network Configuration
 numInputActivations = 2                  # Number of input activations
 numHiddenLayers = 2                      # Number of hidden layers
-numHiddenActivations = [0, 5, 5]       # Number of hidden activations (must have a 0 in front of it and behind it)
+numHiddenActivations = [0, 5, 20]       # Number of hidden activations (must have a 0 in front of it and behind it)
 numOutputActivations = 3                 # Number of output activations
 weightsConfiguration = 0                 # 0 for random, 1 for loading from file, 2 for manual
 outputPrecision = 5                      # Number of decimal places to round output to
@@ -15,11 +15,11 @@ lambda = 0.3                # Learning rate
 randMin = 0.1               # Minimum random weight
 randMax = 1.5               # Maximum random weight
 errorThreshold = 2e-4       # Error threshold
-savingWeights = false       # true for saving weights to file, false for not saving
+savingWeights = true        # true for saving weights to file, false for not saving
 
 #File Configuration
 fileWeights = "WeightsI"
 saveWeightsFile = "WeightsI"
-trainingFile = "TrainingData.txt"
-trainingAnswersFile = "TrainingAnswers.txt"
-testingFile = "TestData.txt"
+trainingFile = "/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCD2LayerNetwork/TrainingData.txt"
+trainingAnswersFile = "/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCD2LayerNetwork/TrainingAnswers.txt"
+testingFile = "/Users/varunthvar1/CLionProjects/ATCS-Neural-Networks/ABCD2LayerNetwork/TestData.txt"

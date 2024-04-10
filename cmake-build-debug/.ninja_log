@@ -1,4 +1,3 @@
 # ninja log v5
-11	194	1711475352509728659	build.ninja	f769ed1ed9612c36
+11	194	1712050444703005024	build.ninja	f769ed1ed9612c36
 3064	3307	1711039553325271905	ATCS_Neural_Networks	fd9cde465a11854a
-19	3063	1711039553067578349	CMakeFiles/ATCS_Neural_Networks.dir/ABCBackpropNetwork/ABCBackPropagation.cpp.o	af4700136bfeddce

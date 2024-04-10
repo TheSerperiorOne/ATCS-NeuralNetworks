@@ -3,11 +3,11 @@
  * Date of Creation: 25 March 2023
  * Description: This is an implementation of a simple trainable A-B-C-D Network
  *              designed for OR, AND, and XOR, all at the same time. This network incorporates the
- *              backprogation algorithm to minimize the error by adjusting the weights by the
+ *              backpropagation algorithm to minimize the error by adjusting the weights by the
  *              derivative of the Error function and has 2 hidden layers.
  *
  * TOML: This file uses the TOML++ Library written by Mark Gillard to parse the configuration file, a .toml file.
- *       The code to execute this via terminal is "g++ -I tomlplusplus/include -std=c++20 ABCDNetwork.cpp", and
+ *       The code to execute this via terminal is "g++ -I tomlplusplus/include -std=c++20 ABCDNetworkOLD.cpp", and
  *       the user has to have the tomlplusplus library in the same directory as the file.
  */
 
@@ -122,7 +122,7 @@ void printTime(double seconds)
  *   loadWeights() - Loads the weights from the fileWeights file
  *   initializeTestingData() - Initializes the testing data based on the testing file
  *   initializeTrainingData() - Initializes the training data based on the training file
- *   initalizeTrainingAnswers() - Initializes the training answers based on the training answers file
+ *   initializeTrainingAnswers() - Initializes the training answers based on the training answers file
  *   saveWeights() - Saves the weights to a file, which is called "WeightsI" + n x "I", where n is the number of files
  *       already created. It adds the configuration of the network to the first line of the file, and then adds the
  *       weights to the file.
@@ -382,7 +382,7 @@ struct NeuralNetwork
       if (training) // Populating Training Data and Training Answers
       {
          initializeTrainingData();
-         initalizeTrainingAnswers();
+         initializeTrainingAnswers();
       } // if (training)
       initializeTestingData(); // Populating Testing Data
       return;
@@ -541,7 +541,7 @@ struct NeuralNetwork
 /**
  * Initializes the training answers based on the training answers file
  */
-   void initalizeTrainingAnswers()
+   void initializeTrainingAnswers()
    {
       ifstream file;
       int caseNum, I;
@@ -580,7 +580,7 @@ struct NeuralNetwork
          cout << "Error - Cannot Open File for Training Answers" << endl;
       } // else (!file.is_open())
       return;
-   } // void initalizeTrainingAnswers()
+   } // void initializeTrainingAnswers()
 
 /**
  * Outputs the Network Type, Lambda Value, Error Threshold, Maximum Number of Iterations,
@@ -888,7 +888,7 @@ struct NeuralNetwork
 /**
  * Accepts input from the user and runs the network using the input values. SPECIFIC TO BOOLEAN ALGEBRA
  */
-void testingData(NeuralNetwork* network)
+void runningAllTestingData(NeuralNetwork* network)
 {
    for (int index = 0; index < network->numCases; ++index)
    {
@@ -900,7 +900,7 @@ void testingData(NeuralNetwork* network)
       cout << endl << endl;
    } // for (int numOutputActivations = 0; numOutputActivations < 4; ++numOutputActivations)
    return;
-} // void testingData(NeuralNetwork* network)
+} // void runningAllTestingData(NeuralNetwork* network)
 
 /**
  * Main function of the program - creates and configures the network, allocates and populates the arrays of the network,
@@ -914,7 +914,7 @@ int main(int argc, char** argv)
    if (argc > 1) configFilePath = argv[1];
    cout << configFilePath << endl;
 
-   NeuralNetwork network; // Creating and Configurating the Network based on pre-determined constants and designs
+   NeuralNetwork network; // Creating and Configuring the Network based on pre-determined constants and designs
    network.setConfigurationParameters();
    network.echoConfigurationParameters();
    cout << endl;
@@ -934,7 +934,7 @@ int main(int argc, char** argv)
 
    if (!network.training) // Running the Network using test data
    {
-      testingData(&network);
+      runningAllTestingData(&network);
       network.reportResults();
    } // if (!network.training)
    return 0;
