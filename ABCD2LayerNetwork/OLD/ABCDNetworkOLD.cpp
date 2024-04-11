@@ -176,7 +176,7 @@ struct NeuralNetwork
    double** weightsKM;           // Weights between the Hidden Layers and the Output Layer
    double* thetaJ;               // Values used to calculating the hidden nodes - dot product of inputs and weights
    double* thetaK;               // Values used to calculating the hidden nodes - dot product of inputs and weights
-   double* lowerPsi;             // Value of lowerOmega multiplied by the derivative of the activation function function
+   double* lowerPsi;             // Value of lowerOmega multiplied by the derivative of the activation function
    double** trainData;           // Training Data (Inputs)
    double** trainAnswers;        // TrainingAnswers.txt (Expected Outputs)
    double** testData;            // Test Data (Inputs)

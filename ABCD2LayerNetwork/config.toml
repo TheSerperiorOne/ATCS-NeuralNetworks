@@ -1,11 +1,11 @@
 #Network Configuration
-LayerConfiguration = [2, 5, 5, 3]        # Number of activations in each layer
-weightsConfiguration = 0                 # 0 for random, 1 for loading from file, 2 for manual
+LayerConfiguration = [2, 7, 9, 3]        # Number of activations in each layer
+weightsConfiguration = 1                 # 0 for random, 1 for loading from file, 2 for manual
 outputPrecision = 17                     # Number of decimal places to round output to
-activationFunction = "sigmoid"           # 0 for sigmoid, 1 for linear
+activationFunction = "sigmoid"           # options: "sigmoid", "linear"
 
 #Training
-training = true             # true for training and running, false for just running
+training = false            # true for training and running, false for just running
 numCases = 4                # Number of cases in the training data
 maxIterations = 100000      # Maximum number of iterations
 lambda = 0.3                # Learning rate

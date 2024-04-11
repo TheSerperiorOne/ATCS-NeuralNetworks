@@ -1,6 +1,6 @@
 /*
  * Author: Varun Thvar
- * Date of Creation: 25 March 2023
+ * Date of Creation: 25 March 2024
  * Description: This is an implementation of a simple trainable A-B-C-D Network. This network incorporates the
  *              backpropagation algorithm to minimize the error by adjusting the weights by the
  *              derivative of the Error function and has 2 hidden layers. This version uses generalized notation,
@@ -52,6 +52,7 @@
 #define OUTPUT_LAYER                       3
 #define RANDOMIZE_WEIGHTS                  0
 #define LOAD_WEIGHTS                       1
+#define NUM_LAYERS                         4
 
 
 using namespace std;
@@ -68,7 +69,7 @@ double linear(double value)
 } // double linear(double value)
 
 /**
- * Implements the derivative linear function, which is defined by
+ * Implements the derivative of the linear function, which is defined by
  *    linearPrime(x) = 1.0
  */
 double linearPrime(double value)
@@ -214,8 +215,7 @@ struct NeuralNetwork
    {
       auto config = toml::parse_file(configFilePath);
       toml::array arr = *config.get_as<toml::array>("LayerConfiguration");
-
-      numLayers = arr.size();
+      numLayers = NUM_LAYERS;
 
       LayerConfiguration = new int[arr.size()];
       for (int index = 0; index < numLayers; ++index)
@@ -396,7 +396,7 @@ struct NeuralNetwork
             {
                weights[n][K][M] = randomValue();
             } // for (K = 0; K < LayerConfiguration[n]; K++)
-         } // for (M = 0; M < LayerConfiguration[n]; M++)
+         } // for (M = 0; M < LayerConfiguration[n - 1]; M++)
 
          n = HIDDEN_LAYER_2;
          for (K = 0; K < LayerConfiguration[n - 1]; K++)
@@ -405,7 +405,7 @@ struct NeuralNetwork
             {
                weights[n][J][K] = randomValue();
             } // for (J = 0; J < LayerConfiguration[n]; J++)
-         } // for (K = 0; K < LayerConfiguration[n]; K++)
+         } // for (K = 0; K < LayerConfiguration[n - 1]; K++)
 
          n = OUTPUT_LAYER;
          for (J = 0; J < LayerConfiguration[n - 1]; J++)
@@ -414,7 +414,7 @@ struct NeuralNetwork
             {
                weights[n][I][J] = randomValue();
             } // for (I = 0; I < LayerConfiguration[n]; I++)
-         } // for (J = 0; J < LayerConfiguration[n]; J++)
+         } // for (J = 0; J < LayerConfiguration[n - 1]; J++)
       } // if (weightsConfiguration == 0)
 
       else if (weightsConfiguration == LOAD_WEIGHTS) // Loading Weights
@@ -975,7 +975,7 @@ struct NeuralNetwork
             cout << " -> ";
             printArray(run(trainData[index]), LayerConfiguration[OUTPUT_LAYER]);
             cout << endl;
-         } // for (int index = 0...
+         } // for (int index = 0; index < numCases; ++index)
 
          cout << endl;
       } // if (training)
@@ -985,7 +985,8 @@ struct NeuralNetwork
 
 
 /**
- * Runs the network using the given test data, and prints the output of the network. Used for testing purposes.
+ * Runs the network using the given test data, and prints the output of the network. Used for testing purposes,
+ *          and should only be used if the inputs can be put into .
  */
 void runningAllTestingData(NeuralNetwork* network)
 {
@@ -1014,7 +1015,6 @@ int main(int argc, char** argv)
    rand();
 
    if (argc > 1) configFilePath = argv[1];
-   cout << configFilePath << endl;
 
    NeuralNetwork network; // Creating and configuring the network based on pre-determined constants and designs
    network.setConfigurationParameters();
