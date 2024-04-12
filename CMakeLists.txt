@@ -6,7 +6,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -fexperimental-library -stdli
 
 add_executable(ATCS_Neural_Networks
         ABCD2LayerNetwork/ABCDNetwork.cpp
-        ABCD2LayerNetwork/OLD/ABCDNetworkOLD.cpp
 )
 
 target_include_directories(ATCS_Neural_Networks PUBLIC ABCBackpropNetwork ABCBackpropNetwork/tomlplusplus/include)
