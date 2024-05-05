@@ -1,5 +1,5 @@
 #Network Configuration
-LayerConfiguration = [2, 5, 1]           # Number of activations in each layer (must have at least 2 layers)
+LayerConfiguration = [2, 1, 1]           # Number of activations in each layer (input, hidden, output)
 weightsConfiguration = 0                 # 0 for random, 1 for loading from file, 2 for manual
 outputPrecision = 17                     # Number of decimal places to round output to
 activationFunction = "sigmoid"           # options: "sigmoid", "linear", "tanh"

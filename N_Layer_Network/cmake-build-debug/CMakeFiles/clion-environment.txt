@@ -1,3 +1,4 @@
-ToolSet: 1.0 (local)Options: 
+ToolSet: 1.0 (local)Ninja: 1.11.1@/Users/varunthvar1/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja
+Options: 
 
 Options:-DCMAKE_MAKE_PROGRAM=/Users/varunthvar1/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja

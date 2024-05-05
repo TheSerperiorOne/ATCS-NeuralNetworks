@@ -95,9 +95,8 @@ double sigmoidPrime(double value)
  */
 double tanh(double value)
 {
-   double expValue = exp(value);
-   double expNegativeValue = exp(-value);
-   return (expValue - expNegativeValue) / (expValue + expNegativeValue);
+   double sign = value > 0.0 ? -1.0 : 1.0;
+   return sign * ((exp(sign * 2.0 * value) - 1.0) / (exp(sign * 2.0 * value) + 1.0));
 } // double tanh(double value)
 
 /**
@@ -206,7 +205,7 @@ struct NeuralNetwork
    int numCases;                 // Number of Test Cases
    int trainingTime;             // Time taken for training the network
    double runningTime;           // Time taken for running the network
-   int weightsConfiguration;     // 0 if the weights are randomized, 1 if loaded from file, 2 if manually set
+   int weightsConfiguration;     // 0 if the weights are randomized, if loaded from file, 2 if manually set
    int iterations;               // Number of iterations taken during training
    double errorReached;          // Error value reached at the end of training or running
    bool savingWeights;           // True if the network  saves the weights at the end of training, false if otherwise
@@ -230,7 +229,6 @@ struct NeuralNetwork
  */
    void setConfigurationParameters(string configFilePath)
    {
-      cout << configFilePath << endl;
       auto config = toml::parse_file(configFilePath);
       toml::array arr = *config.get_as<toml::array>("LayerConfiguration");
       
@@ -326,11 +324,11 @@ struct NeuralNetwork
          cout << "     " << "Weights Generation: " << (weightsConfiguration == 0 ? "Randomize" :
                                                         weightsConfiguration == 1 ? "Load from File" : "Manually Set")
               << endl;
+         cout << "     " << "Keep Alive Frequency: " << keepAlive << endl;
          cout << "     " << "Saving Weights: " << (savingWeights ? "True" : "False") << endl;
          if (savingWeights) cout << "     " << "Weights Saved to: " << fileWeights << endl;
          cout << "     " << "Training File: " << trainingFile << endl;
          cout << "     " << "Training Answers File: " << trainingAnswersFile << endl;
-         
       } // if (training)
       return;
    } //void echoConfigurationParameters()
@@ -355,7 +353,7 @@ struct NeuralNetwork
          {
             weights[n][J] = new double[LayerConfiguration[n - 1]];
          } // for (J = 0; J < LayerConfiguration[n]; J++)
-      }
+      } // for (n = 1; n < numLayers; ++n)
       
       testData = new double *[numCases]; // Initializing Test Data
       for (int index = 0; index < numCases; ++index) testData[index] = new double[LayerConfiguration[inputIndex]];
@@ -461,8 +459,8 @@ struct NeuralNetwork
                      getline(file, valueString);
                      value = stod(valueString);
                      weights[n][J][K] = value;
-                  } // for (M = 0; M < LayerConfiguration[n - 1]; M++)
-               } // for (K = 0; K < LayerConfiguration[n]; K++
+                  } // for (K = 0; K < LayerConfiguration[n - 1]; K++)
+               } // for (J = 0; J < LayerConfiguration[n]; J++)
             } // for (n = 1; n < numLayers; ++n)
          } // if (firstLine == configuration)
          else // (firstLine != configuration)
@@ -485,7 +483,7 @@ struct NeuralNetwork
    void initializeTestingData()
    {
       ifstream file(testingFile);
-      int caseNum, K, n;
+      int caseNum, M;
       string configuration = to_string(LayerConfiguration[inputIndex]);
       
       if (file.is_open())
@@ -499,12 +497,12 @@ struct NeuralNetwork
             
             for (caseNum = 0; caseNum < numCases; caseNum++)
             {
-               for (K = 0; K < LayerConfiguration[inputIndex]; K++)
+               for (M = 0; M < LayerConfiguration[inputIndex]; M++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
-                  testData[caseNum][K] = value;
-               } // for (K = 0; K < LayerConfiguration[inputIndex]; K++)
+                  testData[caseNum][M] = value;
+               } // for (M = 0; M < LayerConfiguration[inputIndex]; M++)
             } // for (caseNum = 0; caseNum < numCases; caseNum++)
          } // if (firstLine == configuration)
          else // (firstLine != configuration)
@@ -526,7 +524,7 @@ struct NeuralNetwork
    void initializeTrainingData()
    {
       ifstream file;
-      int caseNum, K, n;
+      int caseNum, M;
       file.open(trainingFile);
       string configuration = to_string(LayerConfiguration[inputIndex]);
       
@@ -540,12 +538,12 @@ struct NeuralNetwork
             double value;
             for (caseNum = 0; caseNum < numCases; caseNum++)
             {
-               for (K = 0; K < LayerConfiguration[inputIndex]; K++)
+               for (M = 0; M < LayerConfiguration[inputIndex]; M++)
                {
                   getline(file, valueString);
                   value = stod(valueString);
-                  trainData[caseNum][K] = value;
-               } // for (K = 0; K < LayerConfiguration[inputIndex]; K++)
+                  trainData[caseNum][M] = value;
+               } // for (M = 0; M < LayerConfiguration[inputIndex]; M++)
             } // for (caseNum = 0; caseNum < numCases; caseNum++)
          } // if (firstLine == configuration)
          else // (firstLine != configuration)
@@ -693,10 +691,10 @@ struct NeuralNetwork
          for (K = 0; K < LayerConfiguration[n - 1]; ++K)
          {
             theta[n][J] += a[n - 1][K] * weights[n][J][K];
-         } // for (J = 0; J < LayerConfiguration[n - 1]; ++J)
+         } // for (K = 0; K < LayerConfiguration[n - 1]; ++K)
          a[n][J] = activationFunction(theta[n][J]);
          psi[n][J] = (answers[J] - a[n][J]) * activationFunctionDerivative(theta[n][J]);
-      } // for (I = 0; I < LayerConfiguration[n]; ++I)
+      } // for (J = 0; J < LayerConfiguration[n]; ++J)
       
       return a[outputIndex];
    } // double runTrain(double *inputValues, double *answers)
@@ -709,7 +707,7 @@ struct NeuralNetwork
    void train()
    {
       time_t dummyStart, dummyEnd;
-      int I, J, K, caseNum, n;
+      int I, J, K, M, X, caseNum, n;
       double omega, *testingArray, *answersArray;
       
       time(&dummyStart);
@@ -725,7 +723,7 @@ struct NeuralNetwork
             
             runTrain(testingArray, answersArray);
             
-            for (n = outputIndex; n > inputIndex + 1; --n)
+            for (n = outputIndex; n > inputIndex + 2; --n)
             {
                for (K = 0; K < LayerConfiguration[n - 1]; ++K)
                {
@@ -737,11 +735,26 @@ struct NeuralNetwork
                   } // for (J = 0; J < LayerConfiguration[n]; ++J)
                   psi[n - 1][K] = omega * activationFunctionDerivative(theta[n - 1][K]);
                } // for (K = 0; K < LayerConfiguration[n - 1]; ++K)
-            } // for (n = outputIndex; n > inputIndex + 1; ++n)
+            } // for (n = outputIndex; n > inputIndex + 2; --n)
             
-            for (K = 0; K < LayerConfiguration[n - 1]; ++K)
-               for (J = 0; J < LayerConfiguration[n]; ++J)
-                  weights[n][J][K] += lambda * a[n - 1][K] * psi[n][J];
+            n = inputIndex + 2;
+            
+            for (M = 0; M < LayerConfiguration[n - 1]; ++M)
+            {
+               omega = 0.0;
+               for (K = 0; K < LayerConfiguration[n]; ++K)
+               {
+                  omega += psi[n][K] * weights[n][K][M];
+                  weights[n][K][M] += lambda * a[n - 1][M] * psi[n][K];
+               } // for (K = 0; K < LayerConfiguration[n]; ++K)
+               
+               psi[n - 1][M] = omega * activationFunctionDerivative(theta[n - 1][M]);
+               
+               for (X = 0; X < LayerConfiguration[inputIndex]; ++X)
+               {
+                  weights[n - 1][M][X] += lambda * a[inputIndex][X] * psi[n - 1][M]; // inputIndex = n - 2
+               } // for (X = 0; X < LayerConfiguration[inputIndex]; ++X)
+            } // for (M = 0; M < LayerConfiguration[n - 1]; ++M)
             
             run(testingArray);
             for (I = 0; I < LayerConfiguration[outputIndex]; ++I)
@@ -754,7 +767,8 @@ struct NeuralNetwork
          ++iterations;
          if (keepAlive && iterations % keepAlive == 0) // Printing the error every keepAlive iterations
          {
-            cout << "Iteration: " << iterations << " - Error: " << errorReached << endl;
+            cout << "Iteration: " << iterations << " - Error: " << errorReached << " - Time: ";
+            printTime(int(time(&dummyEnd)) - int(dummyStart));
          } // if (keepAlive && iterations % keepAlive == 0)
       } // while (epoch < maxIterations && errorReached > errorThreshold)
       
@@ -771,7 +785,7 @@ struct NeuralNetwork
    {
       ifstream file;
       string str;
-      int I, J, K, M, n;
+      int J, K, n;
       string fileName = saveWeightsFile;
       
       file.open(fileName);
@@ -794,8 +808,8 @@ struct NeuralNetwork
             for (J = 0; J < LayerConfiguration[n - 1]; ++J)
             {
                outfile << fixed << setprecision(outputPrecision) << weights[n][K][J] << endl;
-            } // for (J = 0; J < LayerConfiguration[n]; ++J)
-         } // for (K = 0; K < LayerConfiguration[n - 1]; ++K)
+            } // for (J = 0; J < LayerConfiguration[n - 1]; ++J)
+         } // for (K = 0; K < LayerConfiguration[n]; ++K)
       } // for (n = 1; n < numLayers; ++n)
       
       outfile.close();
@@ -845,10 +859,6 @@ struct NeuralNetwork
          
          for (int index = 0; index < numCases; ++index)
          {
-            printArray(trainData[index], LayerConfiguration[inputIndex]);
-            cout << " = ";
-            printArray(trainAnswers[index], LayerConfiguration[outputIndex]);
-            cout << " -> ";
             printArray(runTrain(trainData[index], trainAnswers[index]), LayerConfiguration[outputIndex]);
             cout << endl;
          } // for (int index = 0...
@@ -857,7 +867,6 @@ struct NeuralNetwork
       return;
    } // reportResults()
 }; // struct NeuralNetwork
-
 
 /**
  * Runs the network using the given test data, and prints the output of the network. Used for testing purposes,
@@ -868,10 +877,6 @@ void runningAllTestingData(NeuralNetwork *network)
    int n;
    for (int index = 0; index < network->numCases; ++index)
    {
-      network->checkNetwork();
-      cout << "Running the Network with Test Data: ";
-      network->printArray(network->testData[index], network->LayerConfiguration[network->inputIndex]);
-      cout << endl;
       network->printArray(network->run(network->testData[index]), network->LayerConfiguration[network->outputIndex]);
       cout << endl << endl;
    } // for (int index = 0; index < network->numCases; ++index)
@@ -902,10 +907,10 @@ int main(int argc, char **argv)
    network.setConfigurationParameters(configFilePath);
    network.echoConfigurationParameters();
    cout << endl;
-
+   
    network.allocateArrayMemory(); // Allocating Arrays in Network
    network.populateArrays(); // Populating Arrays in Network
-   
+
    if (network.training) // Training the Network using predetermined training data
    {
       network.checkNetwork();
@@ -913,12 +918,12 @@ int main(int argc, char **argv)
       network.run(network.testData[0]);
       network.reportResults();
    } // if (network.training)
-   
+
    if (network.savingWeights)
    {
       network.saveWeights();
    } // if (network.savingWeights)
-   
+
    if (!network.training) // Running the Network using test data
    {
       runningAllTestingData(&network);

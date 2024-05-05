@@ -1,5 +1,4 @@
 # ninja log v5
-0	3270	1712861569700023539	CMakeFiles/ATCS_Neural_Networks.dir/ABCD2LayerNetwork/OLD/ABCDNetworkOLD.cpp.o	6b593cf7d1e65379
 0	3227	1712861569653953070	CMakeFiles/ATCS_Neural_Networks.dir/ABCD2LayerNetwork/ABCDNetwork.cpp.o	317525cfea788fa1
 2	44	1712861618582341156	ATCS_Neural_Networks	4486f8d2557f8a9f
-1	266	1712861621855446144	build.ninja	bf6fcfa10701ba76
+1	266	1713460917101438983	build.ninja	bf6fcfa10701ba76
