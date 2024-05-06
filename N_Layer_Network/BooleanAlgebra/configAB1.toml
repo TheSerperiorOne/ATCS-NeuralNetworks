@@ -1,0 +1,23 @@
+#Network Configuration
+LayerConfiguration = [2, 1, 1]           # Number of activations in each layer (input, hidden, output)
+weightsConfiguration = 0                 # 0 for random, 1 for loading from file, 2 for manual
+outputPrecision = 17                     # Number of decimal places to round output to
+activationFunction = "sigmoid"           # options: "sigmoid", "linear", "tanh"
+
+#Training
+training = true             # true for training and running, false for just running
+numCases = 4                # Number of cases in the training data
+maxIterations = 100000      # Maximum number of iterations
+lambda = 0.3                # Learning rate
+randMin = 0.1               # Minimum random weight
+randMax = 1.5               # Maximum random weight
+errorThreshold = 2e-4       # Error threshold
+savingWeights = false       # true for saving weights to file, false for not saving
+keepAlive = 0               # Number of iterations for printing error
+
+#File Configuration
+fileWeights = "BooleanAlgebra/WeightsI"
+saveWeightsFile = "BooleanAlgebra/WeightsI"
+trainingFile = "BooleanAlgebra/TrainingData.txt"
+trainingAnswersFile = "BooleanAlgebra/TrainingAnswersAB1.txt"
+testingFile = "BooleanAlgebra/TestData.txt"

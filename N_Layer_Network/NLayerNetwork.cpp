@@ -859,8 +859,9 @@ struct NeuralNetwork
          
          for (int index = 0; index < numCases; ++index)
          {
+            printArray(trainAnswers[index], LayerConfiguration[outputIndex]);
             printArray(runTrain(trainData[index], trainAnswers[index]), LayerConfiguration[outputIndex]);
-            cout << endl;
+            cout << endl << endl;
          } // for (int index = 0...
          cout << endl;
       } // if (training)

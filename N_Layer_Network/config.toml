@@ -1,18 +1,18 @@
 #Network Configuration
-LayerConfiguration = [9700, 100, 10, 5]        # Number of activations in each layer (must have at least 2 layers)
+LayerConfiguration = [8300, 30, 20, 5]   # Number of activations in each layer (must have at least 2 layers)
 weightsConfiguration = 0                 # 0 for random, 1 for loading from file, 2 for manual
 outputPrecision = 17                     # Number of decimal places to round output to
 activationFunction = "sigmoid"           # options: "sigmoid", "linear", "tanh"
 
 #Training
 training = true             # true for training and running, false for just running
-numCases = 25                # Number of cases in the training data
+numCases = 25               # Number of cases in the training data
 maxIterations = 100000      # Maximum number of iterations
-lambda = 0.3                # Learning rate
-randMin = -0.5              # Minimum random weight
-randMax = 0.5               # Maximum random weight
-errorThreshold = 1e-4       # Error threshold
-savingWeights = true       # true for saving weights to file, false for not saving
+lambda = 0.5                # Learning rate
+randMin = -1.5              # Minimum random weight
+randMax = 1.5               # Maximum random weight
+errorThreshold = 2e-4       # Error threshold
+savingWeights = true        # true for saving weights to file, false for not saving
 keepAlive = 100             # Number of iterations for printing error
 
 #File Configuration,
